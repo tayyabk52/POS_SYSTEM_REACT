@@ -282,11 +282,11 @@ function MainLayout({ user, onLogout, children, inventoryAlerts = [] }) {
           position: screens.lg ? "relative" : "fixed",
           zIndex: 2,
           paddingTop: 18,
-          paddingLeft: !screens.sm ? 0 : 8,
-          paddingRight: !screens.sm ? 0 : 8,
+          paddingLeft: !screens.lg ? 0 : 8,
+          paddingRight: !screens.lg ? 0 : 8,
         }}
         breakpoint="lg"
-        collapsedWidth={screens.xs ? 0 : 64}
+        collapsedWidth={0}
         collapsible
         collapsed={collapsed && !screens.lg}
         onCollapse={(val) => setCollapsed(val)}
@@ -352,7 +352,7 @@ function MainLayout({ user, onLogout, children, inventoryAlerts = [] }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            boxShadow: theme.headerShadow,
+            boxShadow: screens.lg ? theme.headerShadow : "none",
             minHeight: 72,
             position: "sticky",
             top: 0,
@@ -402,7 +402,7 @@ function MainLayout({ user, onLogout, children, inventoryAlerts = [] }) {
           >
             {screens.lg && (
               <Avatar
-                size={screens.xs ? 36 : 48}
+                size={screens.xs ? 28 : 38}
                 style={{
                   background: theme.primary,
                   fontWeight: theme.fontWeightBold,
@@ -423,6 +423,7 @@ function MainLayout({ user, onLogout, children, inventoryAlerts = [] }) {
                   fontWeight: theme.fontWeightMedium,
                   fontSize: screens.xs ? 15 : 18,
                   color: "#FF0000",
+                  padding: 0,
                 }}
               >
                 Logout
