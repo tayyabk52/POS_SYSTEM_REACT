@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Row, Col, Statistic, Table, Typography } from 'antd';
+import { Card, Row, Col, Statistic, Table, Typography, Alert } from 'antd';
 import { DollarOutlined, UserOutlined, ExclamationCircleOutlined, CalendarOutlined } from '@ant-design/icons';
 import { theme } from '../theme';
 
@@ -18,12 +18,31 @@ function DashboardPage() {
   const [customerCount, setCustomerCount] = useState(0);
   const [inventoryAlerts, setInventoryAlerts] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [backendStatus, setBackendStatus] = useState('checking');
 
   useEffect(() => {
-    fetch('http://localhost:8000/dashboard/sales-summary').then(r => r.json()).then(setSalesSummary);
-    fetch('http://localhost:8000/dashboard/customer-count').then(r => r.json()).then(d => setCustomerCount(d.customer_count));
-    fetch('http://localhost:8000/dashboard/inventory-alerts').then(r => r.json()).then(d => setInventoryAlerts(d.alerts));
-    fetch('http://localhost:8000/dashboard/recent-transactions').then(r => r.json()).then(d => setTransactions(d.transactions));
+    console.log('DashboardPage mounted - routing is working!');
+    
+    // Test backend connectivity
+    fetch('http://localhost:8000/dashboard/sales-summary')
+      .then(response => {
+        if (response.ok) {
+          setBackendStatus('connected');
+          return response.json();
+        } else {
+          setBackendStatus('error');
+          throw new Error('Backend error');
+        }
+      })
+      .then(setSalesSummary)
+      .catch(() => {
+        setBackendStatus('error');
+        setSalesSummary({ total_sales: 0, num_sales: 0, date: 'No data' });
+      });
+
+    fetch('http://localhost:8000/dashboard/customer-count').then(r => r.json()).then(d => setCustomerCount(d.customer_count)).catch(() => setCustomerCount(0));
+    fetch('http://localhost:8000/dashboard/inventory-alerts').then(r => r.json()).then(d => setInventoryAlerts(d.alerts)).catch(() => setInventoryAlerts([]));
+    fetch('http://localhost:8000/dashboard/recent-transactions').then(r => r.json()).then(d => setTransactions(d.transactions)).catch(() => setTransactions([]));
   }, []);
 
   const columns = [
@@ -36,6 +55,13 @@ function DashboardPage() {
 
   return (
     <div style={{ background: theme.contentBg, minHeight: '100vh', padding: 40, animation: theme.fadeIn, fontFamily: theme.fontFamily }}>
+      <Alert
+        message={`Dashboard Page Loaded Successfully! Backend Status: ${backendStatus}`}
+        type={backendStatus === 'connected' ? 'success' : backendStatus === 'checking' ? 'info' : 'error'}
+        style={{ marginBottom: 24 }}
+        showIcon
+      />
+      
       <Row gutter={[32, 32]}>
         <Col xs={24} sm={12} md={6}>
           <Card bordered={false} hoverable style={{ borderRadius: theme.borderRadius, boxShadow: theme.cardShadow, minHeight: 140, background: theme.cardBg, transition: 'box-shadow 0.2s, transform 0.2s', marginBottom: 8 }} bodyStyle={{ padding: theme.cardPadding, display: 'flex', alignItems: 'center' }}>

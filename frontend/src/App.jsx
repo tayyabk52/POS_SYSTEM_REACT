@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './Login';
 import MainLayout from './MainLayout';
 import DashboardPage from './pages/DashboardPage';
@@ -14,6 +14,14 @@ import ExpensesPage from './pages/ExpensesPage';
 import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
 import SettingsPage from './pages/SettingsPage';
+
+function RouteLogger() {
+  const location = useLocation();
+  useEffect(() => {
+    console.log('Navigated to:', location.pathname);
+  }, [location]);
+  return null;
+}
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -30,11 +38,13 @@ function App() {
   }, [user]);
 
   if (!user) {
+    console.log('Rendering Login page');
     return <Login onLogin={setUser} />;
   }
 
   return (
     <Router>
+      <RouteLogger />
       <MainLayout user={user} onLogout={() => setUser(null)}>
         <Routes>
           <Route path="/dashboard" element={<DashboardPage />} />
@@ -49,6 +59,7 @@ function App() {
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </MainLayout>

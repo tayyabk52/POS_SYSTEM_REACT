@@ -2,15 +2,17 @@
   "name": "pos-frontend",
   "version": "0.1.0",
   "private": true,
-  "main": "public/electron.js",
+  "main": "electron.js",
   "scripts": {
     "dev": "vite",
-    "electron": "electron public/electron.js",
-    "start": "concurrently \"vite\" \"electron public/electron.js\""
+    "build": "vite build",
+    "electron": "electron .",
+    "pack": "npm run build && electron-builder"
   },
   "dependencies": {
     "antd": "^5.13.1",
     "axios": "^1.10.0",
+    "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.6.3"
@@ -19,6 +21,21 @@
     "@vitejs/plugin-react": "^4.0.0",
     "concurrently": "^8.2.0",
     "electron": "^29.3.0",
+    "electron-builder": "^24.6.0",
     "vite": "^4.4.9"
+  },
+  "build": {
+    "appId": "com.yourcompany.possystem",
+    "productName": "POS System",
+    "files": [
+      "dist/**/*",
+      "electron.js"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "win": {
+      "target": "nsis"
+    }
   }
 }

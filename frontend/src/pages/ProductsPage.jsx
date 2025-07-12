@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Input, Select, Tag, Space, Typography, Tooltip, Row, Col, Modal, message, Spin } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, FolderAddOutlined, TrademarkCircleOutlined } from '@ant-design/icons';
+import { Table, Button, Input, Select, Space, Typography, Tooltip, Row, Col, Modal, message, Spin } from 'antd';
+const { Text } = Typography;
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, FolderAddOutlined, TrademarkCircleOutlined, BarsOutlined } from '@ant-design/icons';
 import { theme } from '../theme';
-import ProductDrawer from '../components/ProductDrawer';
+import { Card, SearchBar, StatusTag, ProductDrawer } from '../components';
 import axios from 'axios';
 
 const { Title } = Typography;
@@ -69,36 +70,113 @@ function ProductsPage() {
     return matchesSearch && matchesCategory && matchesBrand;
   });
 
-  // Table columns
+  // Table columns with enhanced styling
   const columns = [
-    { title: 'Code', dataIndex: 'product_code', key: 'product_code', width: 100, fixed: 'left' },
-    { title: 'Name', dataIndex: 'product_name', key: 'product_name', width: 180, render: (text, record) => <b style={{ fontWeight: theme.fontWeightMedium }}>{text}</b> },
-    { title: 'Category', dataIndex: 'category_id', key: 'category_id', width: 120, render: id => categories.find(c => c.category_id === id)?.category_name || '-' },
-    { title: 'Brand', dataIndex: 'brand_id', key: 'brand_id', width: 120, render: id => brands.find(b => b.brand_id === id)?.brand_name || '-' },
-    { title: 'Supplier', dataIndex: 'supplier_id', key: 'supplier_id', width: 140, render: id => suppliers.find(s => s.supplier_id === id)?.supplier_name || '-' },
-    { title: 'Retail Price', dataIndex: 'retail_price', key: 'retail_price', width: 120, align: 'right', render: v => `PKR ${Number(v).toFixed(2)}` },
-    { title: 'Tax', dataIndex: 'tax_category_id', key: 'tax_category_id', width: 100, render: id => taxCategories.find(t => t.tax_category_id === id)?.tax_category_name || '-' },
-    { title: 'Barcode', dataIndex: 'barcode', key: 'barcode', width: 140 },
-    { title: 'Unit', dataIndex: 'unit_of_measure', key: 'unit_of_measure', width: 90 },
-    { title: 'Weight', dataIndex: 'weight', key: 'weight', width: 90, render: w => w ? `${w} kg` : '-' },
-    { title: 'Active', dataIndex: 'is_active', key: 'is_active', width: 90, render: v => v ? <Tag color="green">Yes</Tag> : <Tag color="red">No</Tag> },
+    { 
+      title: 'Code', 
+      dataIndex: 'product_code', 
+      key: 'product_code', 
+      width: 100, 
+      fixed: 'left',
+      render: text => <Text strong>{text}</Text>
+    },
+    { 
+      title: 'Name', 
+      dataIndex: 'product_name', 
+      key: 'product_name', 
+      width: 180, 
+      render: text => <Text strong>{text}</Text> 
+    },
+    { 
+      title: 'Category', 
+      dataIndex: 'category_id', 
+      key: 'category_id', 
+      width: 120, 
+      render: id => <Text>{categories.find(c => c.category_id === id)?.category_name || '-'}</Text> 
+    },
+    { 
+      title: 'Brand', 
+      dataIndex: 'brand_id', 
+      key: 'brand_id', 
+      width: 120, 
+      render: id => <Text>{brands.find(b => b.brand_id === id)?.brand_name || '-'}</Text> 
+    },
+    { 
+      title: 'Supplier', 
+      dataIndex: 'supplier_id', 
+      key: 'supplier_id', 
+      width: 140, 
+      render: id => <Text type="secondary">{suppliers.find(s => s.supplier_id === id)?.supplier_name || '-'}</Text> 
+    },
+    { 
+      title: 'Retail Price', 
+      dataIndex: 'retail_price', 
+      key: 'retail_price', 
+      width: 120, 
+      align: 'right', 
+      render: v => <Text strong>₨ {Number(v).toFixed(2)}</Text> 
+    },
+    { 
+      title: 'Tax', 
+      dataIndex: 'tax_category_id', 
+      key: 'tax_category_id', 
+      width: 100, 
+      render: id => <Text>{taxCategories.find(t => t.tax_category_id === id)?.tax_category_name || '-'}</Text> 
+    },
+    { 
+      title: 'Barcode', 
+      dataIndex: 'barcode', 
+      key: 'barcode', 
+      width: 140,
+      render: text => <Text type="secondary">{text}</Text>
+    },
+    { 
+      title: 'Unit', 
+      dataIndex: 'unit_of_measure', 
+      key: 'unit_of_measure', 
+      width: 90,
+      render: text => <Text>{text}</Text>
+    },
+    { 
+      title: 'Weight', 
+      dataIndex: 'weight', 
+      key: 'weight', 
+      width: 90, 
+      render: w => w ? <Text>{`${w} kg`}</Text> : <Text type="secondary">-</Text> 
+    },
+    { 
+      title: 'Active', 
+      dataIndex: 'is_active', 
+      key: 'is_active', 
+      width: 90, 
+      render: v => v ? <StatusTag status="active" /> : <StatusTag status="inactive" /> 
+    },
     {
       title: 'Actions',
       key: 'actions',
-      width: 180,
+      width: 150,
       fixed: 'right',
       render: (_, record) => (
-        <Space>
+        <Space size="small">
           <Tooltip title="Edit">
-            <Button icon={<EditOutlined />} shape="circle" onClick={() => onEdit(record)} />
+            <Button 
+              type="text"
+              icon={<EditOutlined />} 
+              onClick={() => onEdit(record)}
+            />
           </Tooltip>
           <Tooltip title="Delete">
-            <Button icon={<DeleteOutlined />} shape="circle" danger onClick={() => onDelete(record)} />
+            <Button 
+              type="text"
+              icon={<DeleteOutlined />} 
+              danger
+              onClick={() => onDelete(record)}
+            />
           </Tooltip>
           <Tooltip title="View Variants">
             <Button
-              icon={<span style={{ fontWeight: 'bold' }}>V</span>}
-              shape="circle"
+              type="text"
+              icon={<BarsOutlined />}
               onClick={() => {
                 setSelectedVariants(record.variants || []);
                 setSelectedProductName(record.product_name);
@@ -145,12 +223,10 @@ function ProductsPage() {
     setSaving(true);
     try {
       if (editingProduct) {
-        // Update
         const res = await axios.put(`${API_BASE}/products/${editingProduct.product_id}`, values);
         setProducts(products.map(p => p.product_id === editingProduct.product_id ? res.data : p));
         message.success('Product updated');
       } else {
-        // Create
         const res = await axios.post(`${API_BASE}/products/`, values);
         setProducts([...products, res.data]);
         message.success('Product added');
@@ -229,197 +305,214 @@ function ProductsPage() {
   }
 
   return (
-    <div style={{ background: theme.contentBg, minHeight: '100vh', padding: 32, fontFamily: theme.fontFamily }}>
-      <Card bordered={false} style={{ borderRadius: theme.borderRadius, boxShadow: theme.cardShadow, marginBottom: 32, background: theme.cardBg }} bodyStyle={{ padding: 32 }}>
-        <Row align="middle" justify="space-between" gutter={[16, 16]}>
-          <Col xs={24} sm={12} md={8}>
-            <Title level={4} style={{ margin: 0, fontWeight: theme.fontWeightBold, fontSize: theme.fontSizeTitle, color: theme.text }}>Products</Title>
-          </Col>
-          <Col xs={24} sm={12} md={16} style={{ textAlign: 'right' }}>
+      <div style={{ background: theme.contentBg, minHeight: '100vh', padding: 32, fontFamily: theme.fontFamily }}>
+        {/* Header Card with Search and Filters */}
+        <Card 
+          title="Products"
+          style={{ marginBottom: 32 }}
+          size="large"
+          actions={
             <Space>
-              <Input
-                allowClear
-                prefix={<SearchOutlined />}
-                placeholder="Search by name or code"
-                style={{ width: 220, fontSize: 16 }}
+              <SearchBar
                 value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-              <Select
-                allowClear
-                placeholder="Category"
-                style={{ width: 140 }}
-                value={categoryFilter}
-                onChange={setCategoryFilter}
-                options={categories.map(c => ({ value: c.category_id, label: c.category_name }))}
-                dropdownRender={menu => (
-                  <>
-                    {menu}
-                    <div style={{ display: 'flex', alignItems: 'center', padding: 8 }}>
-                      <Button type="link" icon={<FolderAddOutlined />} onClick={() => setCategoryModalOpen(true)} style={{ padding: 0, height: 24 }}>
-                        Add Category
-                      </Button>
-                    </div>
-                  </>
-                )}
-              />
-              <Select
-                allowClear
-                placeholder="Brand"
-                style={{ width: 140 }}
-                value={brandFilter}
-                onChange={setBrandFilter}
-                options={brands.map(b => ({ value: b.brand_id, label: b.brand_name }))}
-                dropdownRender={menu => (
-                  <>
-                    {menu}
-                    <div style={{ display: 'flex', alignItems: 'center', padding: 8 }}>
-                      <Button type="link" icon={<TrademarkCircleOutlined />} onClick={() => setBrandModalOpen(true)} style={{ padding: 0, height: 24 }}>
-                        Add Brand
-                      </Button>
-                    </div>
-                  </>
-                )}
+                onChange={setSearch}
+                placeholder="Search by name or code"
+                width={220}
+                filters={[
+                  {
+                    placeholder: "Category",
+                    value: categoryFilter,
+                    onChange: setCategoryFilter,
+                    options: categories.map(c => ({ value: c.category_id, label: c.category_name })),
+                    width: 140,
+                    dropdownRender: menu => (
+                      <>
+                        {menu}
+                        <div style={{ display: 'flex', alignItems: 'center', padding: 8 }}>
+                          <Button type="link" icon={<FolderAddOutlined />} onClick={() => setCategoryModalOpen(true)} style={{ padding: 0, height: 24 }}>
+                            Add Category
+                          </Button>
+                        </div>
+                      </>
+                    )
+                  },
+                  {
+                    placeholder: "Brand",
+                    value: brandFilter,
+                    onChange: setBrandFilter,
+                    options: brands.map(b => ({ value: b.brand_id, label: b.brand_name })),
+                    width: 140,
+                    dropdownRender: menu => (
+                      <>
+                        {menu}
+                        <div style={{ display: 'flex', alignItems: 'center', padding: 8 }}>
+                          <Button type="link" icon={<TrademarkCircleOutlined />} onClick={() => setBrandModalOpen(true)} style={{ padding: 0, height: 24 }}>
+                            Add Brand
+                          </Button>
+                        </div>
+                      </>
+                    )
+                  }
+                ]}
               />
               <Button type="primary" icon={<PlusOutlined />} onClick={onAdd} style={{ fontWeight: theme.fontWeightBold, fontSize: 16 }}>Add Product</Button>
               <Tooltip title="Reload">
                 <Button icon={<ReloadOutlined />} onClick={reloadAll} />
               </Tooltip>
             </Space>
-          </Col>
-        </Row>
-      </Card>
-      <Card bordered={false} style={{ borderRadius: theme.borderRadius, boxShadow: theme.cardShadow, background: theme.cardBg }} bodyStyle={{ padding: 0 }}>
-        {error && <div style={{ color: 'red', padding: 16 }}>{error}</div>}
-        {loading ? <Spin style={{ display: 'block', margin: '48px auto' }} size="large" /> : (
-          <Table
-            columns={columns}
-            dataSource={filteredProducts}
-            rowKey="product_id"
-            scroll={{ x: 1200 }}
-            pagination={{ pageSize: 8 }}
-            style={{ fontSize: theme.fontSizeTable, fontFamily: theme.fontFamily }}
-            sticky
-            expandable={{
-              expandedRowRender: record => (
-                <div style={{ background: '#fafbfc', padding: 24, borderRadius: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                  <Row gutter={[24, 16]}>
-                    <Col xs={24} sm={12} md={8}>
-                      <b>Description:</b>
-                      <div style={{ color: '#555', marginBottom: 8 }}>{record.description || <span style={{ color: '#bbb' }}>No description</span>}</div>
-                      <b>Base Price:</b> <span style={{ marginLeft: 8 }}>PKR {Number(record.base_price).toFixed(2)}</span><br/>
-                      <b>Retail Price:</b> <span style={{ marginLeft: 8 }}>PKR {Number(record.retail_price).toFixed(2)}</span>
-                    </Col>
-                    <Col xs={24} sm={12} md={8}>
-                      <b>Reorder Level:</b> <span style={{ marginLeft: 8 }}>{record.reorder_level ?? '-'}</span><br/>
-                      <b>Max Stock Level:</b> <span style={{ marginLeft: 8 }}>{record.max_stock_level ?? '-'}</span><br/>
-                      <b>Unit of Measure:</b> <span style={{ marginLeft: 8 }}>{record.unit_of_measure || '-'}</span><br/>
-                      <b>Weight:</b> <span style={{ marginLeft: 8 }}>{record.weight ? `${record.weight} kg` : '-'}</span>
-                    </Col>
-                    <Col xs={24} sm={12} md={8}>
-                      <b>Created At:</b> <span style={{ marginLeft: 8 }}>{record.created_at ? new Date(record.created_at).toLocaleString() : '-'}</span><br/>
-                      <b>Updated At:</b> <span style={{ marginLeft: 8 }}>{record.updated_at ? new Date(record.updated_at).toLocaleString() : '-'}</span><br/>
-                      <b>Variants:</b> <span style={{ marginLeft: 8 }}>{record.variants && record.variants.length > 0 ? `${record.variants.length} variant(s)` : 'No variants'}</span>
-                    </Col>
-                  </Row>
-                </div>
-              ),
-              rowExpandable: record => true,
-            }}
+          }
+        />
+        
+        {/* Main Table Card */}
+        <Card noPadding>
+          {error && <div style={{ color: 'red', padding: 16 }}>{error}</div>}
+          {loading ? (
+            <Spin style={{ display: 'block', margin: '48px auto' }} size="large" />
+          ) : (
+            <Table
+              columns={columns.map(col => {
+                // Replace the Tag with StatusTag for the is_active column
+                if (col.key === 'is_active') {
+                  return {
+                    ...col,
+                    render: v => v ? <StatusTag status="active" /> : <StatusTag status="inactive" />
+                  };
+                }
+                return col;
+              })}
+              dataSource={filteredProducts}
+              rowKey="product_id"
+              scroll={{ x: 1200 }}
+              pagination={{ pageSize: 8 }}
+              style={{ fontSize: theme.fontSizeTable, fontFamily: theme.fontFamily }}
+              sticky
+              expandable={{
+                expandedRowRender: record => (
+                  <div style={{ background: '#fafbfc', padding: 24, borderRadius: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                    <Row gutter={[24, 16]}>
+                      <Col xs={24} sm={12} md={8}>
+                        <Text strong>Description:</Text>
+                        <div style={{ color: '#555', marginBottom: 8 }}>{record.description || <Text type="secondary">No description</Text>}</div>
+                        <Text strong>Base Price:</Text> <Text>₨ {Number(record.base_price).toFixed(2)}</Text><br/>
+                        <Text strong>Retail Price:</Text> <Text>₨ {Number(record.retail_price).toFixed(2)}</Text>
+                      </Col>
+                      <Col xs={24} sm={12} md={8}>
+                        <Text strong>Reorder Level:</Text> <Text>{record.reorder_level ?? <Text type="secondary">-</Text>}</Text><br/>
+                        <Text strong>Max Stock Level:</Text> <Text>{record.max_stock_level ?? <Text type="secondary">-</Text>}</Text><br/>
+                        <Text strong>Unit of Measure:</Text> <Text>{record.unit_of_measure || <Text type="secondary">-</Text>}</Text><br/>
+                        <Text strong>Weight:</Text> <Text>{record.weight ? `${record.weight} kg` : <Text type="secondary">-</Text>}</Text>
+                      </Col>
+                      <Col xs={24} sm={12} md={8}>
+                        <Text strong>Created At:</Text> <Text>{record.created_at ? new Date(record.created_at).toLocaleString() : <Text type="secondary">-</Text>}</Text><br/>
+                        <Text strong>Updated At:</Text> <Text>{record.updated_at ? new Date(record.updated_at).toLocaleString() : <Text type="secondary">-</Text>}</Text><br/>
+                        <Text strong>Variants:</Text> <Text>{record.variants && record.variants.length > 0 ? `${record.variants.length} variant(s)` : <Text type="secondary">No variants</Text>}</Text>
+                      </Col>
+                    </Row>
+                  </div>
+                ),
+                rowExpandable: record => true,
+              }}
+            />
+          )}
+        </Card>
+        
+        {/* Modals */}
+        <Modal
+          title="Add Category"
+          open={categoryModalOpen}
+          onCancel={() => { setCategoryModalOpen(false); setNewCategoryName(''); }}
+          onOk={handleAddCategory}
+          confirmLoading={addingCategory}
+          okText="Add"
+          cancelText="Cancel"
+        >
+          <Input
+            placeholder="Category name"
+            value={newCategoryName}
+            onChange={e => setNewCategoryName(e.target.value)}
+            onPressEnter={handleAddCategory}
+            autoFocus
           />
-        )}
-      </Card>
-      <Modal
-        title="Add Category"
-        open={categoryModalOpen}
-        onCancel={() => { setCategoryModalOpen(false); setNewCategoryName(''); }}
-        onOk={handleAddCategory}
-        confirmLoading={addingCategory}
-        okText="Add"
-        cancelText="Cancel"
-      >
-        <Input
-          placeholder="Category name"
-          value={newCategoryName}
-          onChange={e => setNewCategoryName(e.target.value)}
-          onPressEnter={handleAddCategory}
-          autoFocus
+        </Modal>
+        
+        <Modal
+          title="Add Brand"
+          open={brandModalOpen}
+          onCancel={() => { setBrandModalOpen(false); setNewBrandName(''); }}
+          onOk={handleAddBrand}
+          confirmLoading={addingBrand}
+          okText="Add"
+          cancelText="Cancel"
+        >
+          <Input
+            placeholder="Brand name"
+            value={newBrandName}
+            onChange={e => setNewBrandName(e.target.value)}
+            onPressEnter={handleAddBrand}
+            autoFocus
+          />
+        </Modal>
+        
+        <Modal
+          title={`Variants for ${selectedProductName}`}
+          open={variantModalOpen}
+          onCancel={() => setVariantModalOpen(false)}
+          footer={<Button onClick={() => setVariantModalOpen(false)}>Close</Button>}
+          width={800}
+        >
+          <Table
+            columns={[
+              { title: 'Size', dataIndex: 'size', key: 'size' },
+              { title: 'Color', dataIndex: 'color', key: 'color' },
+              { title: 'SKU Suffix', dataIndex: 'sku_suffix', key: 'sku_suffix' },
+              { title: 'Barcode', dataIndex: 'barcode', key: 'barcode' },
+              { title: 'Retail Price', dataIndex: 'retail_price', key: 'retail_price', align: 'right', render: v => v ? `₨${Number(v).toFixed(2)}` : '' },
+              { title: 'Base Price', dataIndex: 'base_price', key: 'base_price', align: 'right', render: v => v ? `₨${Number(v).toFixed(2)}` : '' },
+              { title: 'Active', dataIndex: 'is_active', key: 'is_active', render: v => v ? <StatusTag status="active" /> : <StatusTag status="inactive" /> },
+            ]}
+            dataSource={selectedVariants.map((v, i) => ({ ...v, key: v.variant_id || i }))}
+            pagination={false}
+            size="small"
+            bordered
+            locale={{ emptyText: 'No variants' }}
+          />
+        </Modal>
+        
+        <ProductDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          onSave={handleDrawerSave}
+          initialValues={editingProduct || {
+            product_code: "",
+            product_name: "",
+            description: "",
+            category_id: undefined,
+            brand_id: undefined,
+            supplier_id: undefined,
+            base_price: null,
+            retail_price: null,
+            tax_category_id: undefined,
+            barcode: "",
+            unit_of_measure: "",
+            weight: null,
+            reorder_level: null,
+            max_stock_level: null,
+            is_active: true,
+            variants: []
+          }}
+          categories={categories}
+          brands={brands}
+          suppliers={suppliers}
+          taxCategories={taxCategories}
+          isEditing={!!editingProduct}
+          saving={saving}
+          onAddCategory={() => setCategoryModalOpen(true)}
+          onAddBrand={() => setBrandModalOpen(true)}
         />
-      </Modal>
-      <Modal
-        title="Add Brand"
-        open={brandModalOpen}
-        onCancel={() => { setBrandModalOpen(false); setNewBrandName(''); }}
-        onOk={handleAddBrand}
-        confirmLoading={addingBrand}
-        okText="Add"
-        cancelText="Cancel"
-      >
-        <Input
-          placeholder="Brand name"
-          value={newBrandName}
-          onChange={e => setNewBrandName(e.target.value)}
-          onPressEnter={handleAddBrand}
-          autoFocus
-        />
-      </Modal>
-      <ProductDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        onSave={handleDrawerSave}
-        initialValues={editingProduct || {
-          product_code: "",
-          product_name: "",
-          description: "",
-          category_id: undefined,
-          brand_id: undefined,
-          supplier_id: undefined,
-          base_price: null,
-          retail_price: null,
-          tax_category_id: undefined,
-          barcode: "",
-          unit_of_measure: "",
-          weight: null,
-          reorder_level: null,
-          max_stock_level: null,
-          is_active: true,
-          variants: []
-        }}
-        categories={categories}
-        brands={brands}
-        suppliers={suppliers}
-        taxCategories={taxCategories}
-        isEditing={!!editingProduct}
-        saving={saving}
-        onAddCategory={() => setCategoryModalOpen(true)}
-        onAddBrand={() => setBrandModalOpen(true)}
-      />
-      <Modal
-        title={`Variants for ${selectedProductName}`}
-        open={variantModalOpen}
-        onCancel={() => setVariantModalOpen(false)}
-        footer={<Button onClick={() => setVariantModalOpen(false)}>Close</Button>}
-        width={800}
-      >
-        <Table
-          columns={[
-            { title: 'Size', dataIndex: 'size', key: 'size' },
-            { title: 'Color', dataIndex: 'color', key: 'color' },
-            { title: 'SKU Suffix', dataIndex: 'sku_suffix', key: 'sku_suffix' },
-            { title: 'Barcode', dataIndex: 'barcode', key: 'barcode' },
-            { title: 'Retail Price', dataIndex: 'retail_price', key: 'retail_price', render: v => v ? `₨${v}` : '' },
-            { title: 'Base Price', dataIndex: 'base_price', key: 'base_price', render: v => v ? `₨${v}` : '' },
-            { title: 'Active', dataIndex: 'is_active', key: 'is_active', render: v => v ? 'Yes' : 'No' },
-          ]}
-          dataSource={selectedVariants.map((v, i) => ({ ...v, key: v.variant_id || i }))}
-          pagination={false}
-          size="small"
-          bordered
-          locale={{ emptyText: 'No variants' }}
-        />
-      </Modal>
-    </div>
-  );
+      </div>
+    );
+
+  return renderContent();
 }
 
-export default ProductsPage; 
+export default ProductsPage;
