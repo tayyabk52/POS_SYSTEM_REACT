@@ -12,7 +12,7 @@ class ProductVariantBase(BaseModel):
     is_active: Optional[bool] = True
 
 class ProductVariantCreate(ProductVariantBase):
-    pass
+    variant_id: Optional[int] = None
 
 class ProductVariant(ProductVariantBase):
     variant_id: int

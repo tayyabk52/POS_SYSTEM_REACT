@@ -181,6 +181,11 @@ CREATE TABLE inventory (
     UNIQUE(product_id, variant_id, store_id)
 );
 
+-- Enforce uniqueness for base products (no variant) per store in inventory
+CREATE UNIQUE INDEX unique_inventory_no_variant
+ON inventory (product_id, store_id)
+WHERE variant_id IS NULL;
+
 -- Inventory Movements table
 CREATE TABLE inventory_movements (
     movement_id   SERIAL PRIMARY KEY,

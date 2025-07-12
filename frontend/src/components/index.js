@@ -4,3 +4,4 @@ export { default as SearchBar } from './SearchBar';
 export { default as StatusTag } from './StatusTag';
 export { default as Card } from './Card';
 export { default as ProductDrawer } from './ProductDrawer';
+export { default as InventoryDrawer } from './InventoryDrawer';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Input, Select, Space, Typography, Tooltip, Row, Col, Modal, message, Spin } from 'antd';
 const { Text } = Typography;
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, FolderAddOutlined, TrademarkCircleOutlined, BarsOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, FolderAddOutlined, TrademarkCircleOutlined, BarsOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { theme } from '../theme';
 import { Card, SearchBar, StatusTag, ProductDrawer } from '../components';
 import axios from 'axios';
@@ -33,6 +33,8 @@ function ProductsPage() {
   const [variantModalOpen, setVariantModalOpen] = useState(false);
   const [selectedVariants, setSelectedVariants] = useState([]);
   const [selectedProductName, setSelectedProductName] = useState("");
+  const [drawerError, setDrawerError] = useState(null);
+  const [drawerErrorTip, setDrawerErrorTip] = useState(null);
 
   // Fetch all dropdowns and products on mount
   useEffect(() => {
@@ -221,6 +223,8 @@ function ProductsPage() {
 
   async function handleDrawerSave(values) {
     setSaving(true);
+    setDrawerError(null);
+    setDrawerErrorTip(null);
     try {
       if (editingProduct) {
         const res = await axios.put(`${API_BASE}/products/${editingProduct.product_id}`, values);
@@ -232,8 +236,20 @@ function ProductsPage() {
         message.success('Product added');
       }
       setDrawerOpen(false);
-    } catch {
-      message.error('Failed to save product');
+    } catch (err) {
+      let userMsg = 'کچھ غلط ہوگیا، براہ کرم دوبارہ کوشش کریں';
+      let tip = 'براہ کرم یقینی بنائیں کہ آپ نے تمام معلومات درست طریقے سے بھری ہیں۔ اگر بارکوڈ یا کوڈ پہلے سے موجود ہے تو اسے تبدیل کریں۔';
+      if (err.response && err.response.data && err.response.data.detail) {
+        if (err.response.data.detail.includes('Barcode')) {
+          userMsg = 'یہ بارکوڈ پہلے سے کسی اور ویریئنٹ میں موجود ہے۔';
+          tip = 'ہر ویریئنٹ کے لیے بارکوڈ منفرد ہونا چاہیے۔ براہ کرم نیا بارکوڈ ڈالیں یا پہلے والے کو چیک کریں۔';
+        } else if (err.response.data.detail.includes('already exists')) {
+          userMsg = 'یہ معلومات پہلے سے موجود ہے۔';
+          tip = 'آپ جو معلومات ڈال رہے ہیں وہ پہلے سے سسٹم میں ہے۔ براہ کرم مختلف معلومات ڈالیں۔';
+        }
+      }
+      setDrawerError(userMsg);
+      setDrawerErrorTip(tip);
     }
     setSaving(false);
   }
@@ -508,6 +524,8 @@ function ProductsPage() {
           saving={saving}
           onAddCategory={() => setCategoryModalOpen(true)}
           onAddBrand={() => setBrandModalOpen(true)}
+          drawerError={drawerError}
+          drawerErrorTip={drawerErrorTip}
         />
       </div>
     );

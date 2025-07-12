@@ -1,6 +1,6 @@
 import React from 'react';
 import { Drawer, Form, Row, Col, Input, InputNumber, Select, Divider, Button, Grid, Switch, Table, Space, Modal, message, Tooltip } from 'antd';
-import { CloseOutlined, InfoCircleOutlined, TrademarkCircleOutlined } from '@ant-design/icons';
+import { CloseOutlined, InfoCircleOutlined, TrademarkCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { theme } from '../theme';
 
 const { useBreakpoint } = Grid;
@@ -55,6 +55,8 @@ function ProductDrawer({
   saving = false,
   onAddCategory,
   onAddBrand,
+  drawerError,
+  drawerErrorTip,
 }) {
   const [form] = Form.useForm();
   const screens = useBreakpoint();
@@ -111,9 +113,9 @@ function ProductDrawer({
   const handleVariantSave = () => {
     variantForm.validateFields().then(values => {
       if (editingVariant) {
-        // Edit
+        // Edit: preserve variant_id
         const newVariants = [...variants];
-        newVariants[editingVariant.idx] = { ...values };
+        newVariants[editingVariant.idx] = { ...values, variant_id: editingVariant.variant_id };
         setVariants(newVariants);
         message.success('Variant updated');
       } else {
@@ -172,7 +174,15 @@ function ProductDrawer({
         closeIcon={<CloseOutlined style={{ fontSize: 22 }} />}
         bodyStyle={{ padding: screens.xs ? 16 : 32, background: theme.cardBg, borderRadius: theme.borderRadius, boxShadow: theme.cardShadow }}
         footer={
-          <div style={{ textAlign: 'right', padding: 16, background: 'transparent' }}>
+          <div style={{ textAlign: 'right', padding: 16, background: 'transparent', position: 'relative' }}>
+            {drawerError && (
+              <div style={{ position: 'absolute', left: 0, top: 0, display: 'flex', alignItems: 'center', color: '#d4380d', fontWeight: 500, fontSize: 15 }}>
+                <Tooltip title={<span style={{ fontSize: 14 }}>{drawerErrorTip || ''}</span>} color="#fff" overlayInnerStyle={{ color: '#222', fontWeight: 400, borderRadius: 8, padding: 8 }}>
+                  <ExclamationCircleOutlined style={{ fontSize: 22, marginRight: 8, color: '#d4380d', cursor: 'pointer' }} />
+                </Tooltip>
+                <span>{drawerError}</span>
+              </div>
+            )}
             <Button onClick={onClose} style={{ marginRight: 12 }}>Cancel</Button>
             <Button type="primary" onClick={handleOk} loading={saving} style={{ fontWeight: theme.fontWeightBold, fontSize: 16 }}>
               {isEditing ? 'Save' : 'Add'}
