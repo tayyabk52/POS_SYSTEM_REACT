@@ -18,6 +18,9 @@ app.include_router(product_router)
 from backend.product.dropdown_api import router as dropdown_router
 app.include_router(dropdown_router)
 
+from backend.inventory.api import router as inventory_router
+app.include_router(inventory_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # For development only! Restrict in production.

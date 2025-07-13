@@ -63,7 +63,7 @@ const SearchBar = ({
           options={filter.options}
           allowClear={filter.allowClear !== false}
           size={size}
-          dropdownRender={filter.dropdownRender}
+          popupRender={filter.popupRender || filter.dropdownRender}
         />
       ))}
       
@@ -101,6 +101,7 @@ SearchBar.propTypes = {
       options: PropTypes.array.isRequired,
       width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
       allowClear: PropTypes.bool,
+      popupRender: PropTypes.func,
       dropdownRender: PropTypes.func
     })
   ),
