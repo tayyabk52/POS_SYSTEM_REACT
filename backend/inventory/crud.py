@@ -3,14 +3,19 @@ from sqlalchemy import and_, or_, func
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import psycopg2
+import os
+from dotenv import load_dotenv
 from . import models, schemas
 
-# Database connection config
-DB_HOST = 'localhost'
-DB_PORT = '5432'
-DB_NAME = 'POSSYSTEM'
-DB_USER = 'postgres'
-DB_PASS = 'admin'
+# Load environment variables from .env file
+load_dotenv()
+
+# Database connection config from environment variables
+DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_PORT = os.getenv('DB_PORT', '5432')
+DB_NAME = os.getenv('DB_NAME', 'POSSYSTEM')
+DB_USER = os.getenv('DB_USER', 'postgres')
+DB_PASS = os.getenv('DB_PASS', 'admin')
 
 def get_db_connection():
     return psycopg2.connect(
@@ -490,7 +495,7 @@ def update_inventory_stock(inventory_id: int, new_stock: int, user_id: int, reas
         cur.close()
         conn.close()
 
-def perform_stock_take(inventory_id: int, actual_count: int, user_id: int, notes: str = None) -> bool:
+def perform_stock_take(inventory_id: int, actual_count: int, user_id: int, notes: Optional[str] = None) -> bool:
     conn = get_db_connection()
     cur = conn.cursor()
     try:
@@ -531,7 +536,7 @@ def perform_stock_take(inventory_id: int, actual_count: int, user_id: int, notes
         cur.close()
         conn.close()
 
-def transfer_stock(from_inventory_id: int, to_store_id: int, quantity: int, user_id: int, notes: str = None) -> bool:
+def transfer_stock(from_inventory_id: int, to_store_id: int, quantity: int, user_id: int, notes: Optional[str] = None) -> bool:
     conn = get_db_connection()
     cur = conn.cursor()
     try:
@@ -648,7 +653,10 @@ def create_inventory(inventory: 'schemas.InventoryCreate') -> dict:
             inventory.last_reorder_date,
             inventory.last_stock_take_date
         ))
-        inventory_id = cur.fetchone()[0]
+        result = cur.fetchone()
+        if result is None:
+            raise Exception('Failed to create inventory record')
+        inventory_id = result[0]
         conn.commit()
         # Fetch the full record with details
         cur.execute("""

@@ -4,7 +4,11 @@ from fastapi import Request
 from pydantic import BaseModel
 import psycopg2
 import os
+from dotenv import load_dotenv
 from datetime import date, datetime, timedelta
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = FastAPI()
 
@@ -26,11 +30,11 @@ app.add_middleware(
 )
 
 # Database connection config (edit as needed)
-DB_HOST = 'localhost'
-DB_PORT = '5432'
-DB_NAME = 'POSSYSTEM'
-DB_USER = 'postgres'
-DB_PASS = 'admin'
+DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_PORT = os.getenv('DB_PORT', '5432')
+DB_NAME = os.getenv('DB_NAME', 'POSSYSTEM')
+DB_USER = os.getenv('DB_USER', 'postgres')
+DB_PASS = os.getenv('DB_PASS', 'admin')
 
 class LoginRequest(BaseModel):
     username: str
