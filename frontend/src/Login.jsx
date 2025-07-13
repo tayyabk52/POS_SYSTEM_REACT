@@ -7,23 +7,6 @@ function Login({ onLogin }) {
   const onFinish = async (values) => {
     console.log("values", values);
 
-    // Tayyab Nazir's Code
-    if (
-      values?.username == "admin@gmail.com" &&
-      values?.password == "admin123"
-    ) {
-      onLogin({
-        user_id: "111",
-        username: "Tayyab Khan",
-        first_name: "tayyab",
-        last_name: "khan",
-        email: "admin@gmail.com",
-        role_id: "1",
-        success: true,
-      });
-      return;
-    }
-
 
     // Tayyab Khan's Code
     setLoading(true);
