@@ -23,7 +23,8 @@ import {
   Badge,
   Spin,
   Empty,
-  Popconfirm
+  Popconfirm,
+  Dropdown
 } from 'antd';
 import {
   PlusOutlined,
@@ -41,80 +42,20 @@ import {
   FileTextOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  ShopOutlined,
+  DownOutlined
 } from '@ant-design/icons';
 import { theme } from '../theme';
 import { SearchBar, StatusTag, Card as CustomCard } from '../components';
+import StoreDrawer from '../components/StoreDrawer';
+import dayjs from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 const { TextArea } = Input;
 
-// Dummy data for demonstration
-const dummyTaxCategories = [
-  { tax_category_id: 1, tax_category_name: 'Standard Sales Tax', tax_rate: 18.00, effective_date: '2024-01-01', is_active: true },
-  { tax_category_id: 2, tax_category_name: 'Reduced Rate', tax_rate: 5.00, effective_date: '2024-01-01', is_active: true },
-  { tax_category_id: 3, tax_category_name: 'Zero Rate', tax_rate: 0.00, effective_date: '2024-01-01', is_active: true },
-  { tax_category_id: 4, tax_category_name: 'Exempt', tax_rate: 0.00, effective_date: '2024-01-01', is_active: false }
-];
-
-const dummyPaymentMethods = [
-  { payment_method_id: 1, method_name: 'Cash', is_active: true },
-  { payment_method_id: 2, method_name: 'Credit Card', is_active: true },
-  { payment_method_id: 3, method_name: 'Debit Card', is_active: true },
-  { payment_method_id: 4, method_name: 'Mobile Wallet', is_active: true },
-  { payment_method_id: 5, method_name: 'Bank Transfer', is_active: false },
-  { payment_method_id: 6, method_name: 'Cheque', is_active: false }
-];
-
-const dummyExpenseCategories = [
-  { category_id: 1, category_name: 'Rent' },
-  { category_id: 2, category_name: 'Utilities' },
-  { category_id: 3, category_name: 'Salaries' },
-  { category_id: 4, category_name: 'Maintenance' },
-  { category_id: 5, category_name: 'Marketing' },
-  { category_id: 6, category_name: 'Office Supplies' },
-  { category_id: 7, category_name: 'Insurance' },
-  { category_id: 8, category_name: 'Transportation' },
-  { category_id: 9, category_name: 'Professional Services' },
-  { category_id: 10, category_name: 'Other' }
-];
-
-const dummyRoles = [
-  { role_id: 1, role_name: 'Administrator', description: 'Full system access' },
-  { role_id: 2, role_name: 'Manager', description: 'Store management and reporting' },
-  { role_id: 3, role_name: 'Cashier', description: 'Sales transactions and basic operations' },
-  { role_id: 4, role_name: 'Stock Keeper', description: 'Inventory management' },
-  { role_id: 5, role_name: 'Sales Associate', description: 'Customer service and sales support' }
-];
-
-const dummyPermissions = [
-  { permission_id: 1, permission_name: 'create_sale', description: 'Create sales transactions' },
-  { permission_id: 2, permission_name: 'void_transaction', description: 'Void sales transactions' },
-  { permission_id: 3, permission_name: 'process_return', description: 'Process customer returns' },
-  { permission_id: 4, permission_name: 'manage_inventory', description: 'Manage product inventory' },
-  { permission_id: 5, permission_name: 'view_reports', description: 'View system reports' },
-  { permission_id: 6, permission_name: 'manage_products', description: 'Create and edit products' },
-  { permission_id: 7, permission_name: 'manage_customers', description: 'Manage customer information' },
-  { permission_id: 8, permission_name: 'manage_users', description: 'Manage system users' },
-  { permission_id: 9, permission_name: 'manage_settings', description: 'Modify system settings' },
-  { permission_id: 10, permission_name: 'manage_suppliers', description: 'Manage supplier information' },
-  { permission_id: 11, permission_name: 'create_purchase_order', description: 'Create purchase orders' },
-  { permission_id: 12, permission_name: 'receive_goods', description: 'Process goods receipt' },
-  { permission_id: 13, permission_name: 'manage_expenses', description: 'Record and manage expenses' },
-  { permission_id: 14, permission_name: 'view_financial_reports', description: 'View financial reports' }
-];
-
-const dummySystemSettings = [
-  { setting_id: 1, setting_key: 'company_name', setting_value: 'Candela POS System', store_id: null },
-  { setting_id: 2, setting_key: 'invoice_prefix', setting_value: 'INV', store_id: null },
-  { setting_id: 3, setting_key: 'default_currency', setting_value: 'PKR', store_id: null },
-  { setting_id: 4, setting_key: 'decimal_places', setting_value: '2', store_id: null },
-  { setting_id: 5, setting_key: 'auto_backup', setting_value: 'true', store_id: null },
-  { setting_id: 6, setting_key: 'backup_frequency', setting_value: 'daily', store_id: null },
-  { setting_id: 7, setting_key: 'session_timeout', setting_value: '30', store_id: null },
-  { setting_id: 8, setting_key: 'enable_notifications', setting_value: 'true', store_id: null }
-];
+const API_BASE_URL = 'http://localhost:8000/settings';
 
 function SettingsPage() {
   const [activeTab, setActiveTab] = useState('tax');
@@ -122,12 +63,15 @@ function SettingsPage() {
   const [searchText, setSearchText] = useState('');
   
   // State for different sections
-  const [taxCategories, setTaxCategories] = useState(dummyTaxCategories);
-  const [paymentMethods, setPaymentMethods] = useState(dummyPaymentMethods);
-  const [expenseCategories, setExpenseCategories] = useState(dummyExpenseCategories);
-  const [roles, setRoles] = useState(dummyRoles);
-  const [permissions, setPermissions] = useState(dummyPermissions);
-  const [systemSettings, setSystemSettings] = useState(dummySystemSettings);
+  const [taxCategories, setTaxCategories] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [expenseCategories, setExpenseCategories] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [permissions, setPermissions] = useState([]);
+  const [systemSettings, setSystemSettings] = useState([]);
+  const [stores, setStores] = useState([]);
+  const [posTerminals, setPosTerminals] = useState([]);
+  const [rolePermissions, setRolePermissions] = useState([]);
   
   // Modal states
   const [taxModal, setTaxModal] = useState({ open: false, editing: null });
@@ -135,6 +79,13 @@ function SettingsPage() {
   const [expenseModal, setExpenseModal] = useState({ open: false, editing: null });
   const [roleModal, setRoleModal] = useState({ open: false, editing: null });
   const [settingModal, setSettingModal] = useState({ open: false, editing: null });
+  const [posTerminalModal, setPosTerminalModal] = useState({ open: false, editing: null });
+  const [rolePermissionModal, setRolePermissionModal] = useState({ open: false, editing: null });
+  
+  // Store management states
+  const [storeDrawerOpen, setStoreDrawerOpen] = useState(false);
+  const [savingStore, setSavingStore] = useState(false);
+  const [editingStore, setEditingStore] = useState(null);
   
   // Form instances
   const [taxForm] = Form.useForm();
@@ -142,6 +93,147 @@ function SettingsPage() {
   const [expenseForm] = Form.useForm();
   const [roleForm] = Form.useForm();
   const [settingForm] = Form.useForm();
+  const [posTerminalForm] = Form.useForm();
+  const [rolePermissionForm] = Form.useForm();
+
+  // Data fetching functions
+  const fetchAllSettingsData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/bulk-data`);
+      if (!response.ok) throw new Error('Failed to fetch settings data');
+      const data = await response.json();
+      
+      // Set all data at once
+      setTaxCategories(data.tax_categories || []);
+      setPaymentMethods(data.payment_methods || []);
+      setExpenseCategories(data.expense_categories || []);
+      setRoles(data.roles || []);
+      setPermissions(data.permissions || []);
+      setSystemSettings(data.system_settings || []);
+      setPosTerminals(data.pos_terminals || []);
+      setRolePermissions(data.role_permissions || []);
+      setStores(data.stores || []);
+    } catch (error) {
+      message.error('Failed to load settings data');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Individual fetch functions for specific updates (keeping for compatibility)
+  const fetchTaxCategories = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tax-categories`);
+      if (!response.ok) throw new Error('Failed to fetch tax categories');
+      const data = await response.json();
+      setTaxCategories(data);
+    } catch (error) {
+      message.error('Failed to load tax categories');
+      console.error(error);
+    }
+  };
+
+  const fetchPaymentMethods = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/payment-methods`);
+      if (!response.ok) throw new Error('Failed to fetch payment methods');
+      const data = await response.json();
+      setPaymentMethods(data);
+    } catch (error) {
+      message.error('Failed to load payment methods');
+      console.error(error);
+    }
+  };
+
+  const fetchExpenseCategories = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/expense-categories`);
+      if (!response.ok) throw new Error('Failed to fetch expense categories');
+      const data = await response.json();
+      setExpenseCategories(data);
+    } catch (error) {
+      message.error('Failed to load expense categories');
+      console.error(error);
+    }
+  };
+
+  const fetchRoles = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/roles`);
+      if (!response.ok) throw new Error('Failed to fetch roles');
+      const data = await response.json();
+      setRoles(data);
+    } catch (error) {
+      message.error('Failed to load roles');
+      console.error(error);
+    }
+  };
+
+  const fetchPermissions = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/permissions`);
+      if (!response.ok) throw new Error('Failed to fetch permissions');
+      const data = await response.json();
+      setPermissions(data);
+    } catch (error) {
+      message.error('Failed to load permissions');
+      console.error(error);
+    }
+  };
+
+  const fetchSystemSettings = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/system`);
+      if (!response.ok) throw new Error('Failed to fetch system settings');
+      const data = await response.json();
+      setSystemSettings(data);
+    } catch (error) {
+      message.error('Failed to load system settings');
+      console.error(error);
+    }
+  };
+
+  const fetchPOSTerminals = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/pos-terminals`);
+      if (!response.ok) throw new Error('Failed to fetch POS terminals');
+      const data = await response.json();
+      setPosTerminals(data);
+    } catch (error) {
+      message.error('Failed to load POS terminals');
+      console.error(error);
+    }
+  };
+
+  const fetchRolePermissions = async (roleId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/roles/${roleId}/permissions`);
+      if (!response.ok) throw new Error('Failed to fetch role permissions');
+      const data = await response.json();
+      setRolePermissions(prev => [...prev, ...data]);
+    } catch (error) {
+      message.error('Failed to load role permissions');
+      console.error(error);
+    }
+  };
+
+  // Initial data loading - optimized to use bulk data
+  useEffect(() => {
+    fetchAllSettingsData();
+  }, []);
+
+  // Remove the separate role permissions fetching since it's now included in bulk data
+  // useEffect(() => {
+  //   // Fetch permissions for each role
+  //   if (roles.length > 0) {
+  //     setRolePermissions([]); // Clear existing permissions
+  //     roles.forEach(role => {
+  //       fetchRolePermissions(role.role_id);
+  //     });
+  //   }
+  // }, [roles]);
 
   // Tax Categories Section
   const taxColumns = [
@@ -161,11 +253,14 @@ function SettingsPage() {
       dataIndex: 'tax_rate',
       key: 'tax_rate',
       align: 'right',
-      render: (rate) => (
+      render: (rate) => {
+        const numRate = parseFloat(rate);
+        return (
         <Text strong style={{ color: theme.primary }}>
-          {rate.toFixed(2)}%
+            {isNaN(numRate) ? '0.00' : numRate.toFixed(2)}%
         </Text>
-      )
+        );
+      }
     },
     {
       title: 'Effective Date',
@@ -290,7 +385,11 @@ function SettingsPage() {
       title: 'Role Name',
       dataIndex: 'role_name',
       key: 'role_name',
-      render: (text) => <Text strong>{text}</Text>
+      render: (text, record) => (
+        <Tooltip title={record.help_text} placement="topLeft">
+          <Text strong style={{ cursor: 'help' }}>{text}</Text>
+        </Tooltip>
+      )
     },
     {
       title: 'Description',
@@ -364,40 +463,183 @@ function SettingsPage() {
     }
   ];
 
+  // Stores Section
+  const storeColumns = [
+    {
+      title: 'Store Name',
+      dataIndex: 'store_name',
+      key: 'store_name',
+      render: (text, record) => (
+        <div>
+          <Text strong>{text}</Text>
+          {!record.is_active && <Tag color="red" style={{ marginLeft: 8 }}>Inactive</Tag>}
+        </div>
+      )
+    },
+    {
+      title: 'Address',
+      dataIndex: 'address',
+      key: 'address',
+      render: (text) => <Text>{text}</Text>
+    },
+    {
+      title: 'City',
+      dataIndex: 'city',
+      key: 'city',
+      render: (text) => <Text>{text}</Text>
+    },
+    {
+      title: 'Phone',
+      dataIndex: 'phone_number',
+      key: 'phone_number',
+      render: (text) => <Text>{text}</Text>
+    },
+    {
+      title: 'Status',
+      dataIndex: 'is_active',
+      key: 'is_active',
+      render: (active) => <StatusTag status={active ? 'active' : 'inactive'} />
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 120,
+      render: (_, record) => (
+        <Space size="small">
+          <Tooltip title="Edit">
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditingStore(record);
+                setStoreDrawerOpen(true);
+              }}
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Delete this store?"
+            onConfirm={() => handleDeleteStore(record)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
+      )
+    }
+  ];
+
+  // POS Terminals Section
+  const posTerminalColumns = [
+    {
+      title: 'Terminal Name',
+      dataIndex: 'terminal_name',
+      key: 'terminal_name',
+      render: (text, record) => (
+        <div>
+          <Text strong>{text}</Text>
+          {!record.is_active && <Tag color="red" style={{ marginLeft: 8 }}>Inactive</Tag>}
+        </div>
+      )
+    },
+    {
+      title: 'IP Address',
+      dataIndex: 'ip_address',
+      key: 'ip_address',
+      render: (text) => <Text code>{text}</Text>
+    },
+    {
+      title: 'Store',
+      dataIndex: 'store_name',
+      key: 'store_name',
+      render: (text) => <Text>{text}</Text>
+    },
+    {
+      title: 'Status',
+      dataIndex: 'is_active',
+      key: 'is_active',
+      render: (active) => <StatusTag status={active ? 'active' : 'inactive'} />
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 120,
+      render: (_, record) => (
+        <Space size="small">
+          <Tooltip title="Edit">
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => handleEditPosTerminal(record)}
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Delete this POS terminal?"
+            onConfirm={() => handleDeletePosTerminal(record.terminal_id)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
+      )
+    }
+  ];
+
   // Handlers for Tax Categories
   const handleEditTax = (record) => {
     setTaxModal({ open: true, editing: record });
     taxForm.setFieldsValue({
       tax_category_name: record.tax_category_name,
       tax_rate: record.tax_rate,
-      effective_date: record.effective_date ? new Date(record.effective_date) : null,
+      effective_date: dayjs(record.effective_date),
       is_active: record.is_active
     });
   };
 
-  const handleDeleteTax = (id) => {
-    setTaxCategories(taxCategories.filter(t => t.tax_category_id !== id));
-    message.success('Tax category deleted');
+  const handleDeleteTax = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tax-categories/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete tax category');
+      message.success('Tax category deleted');
+      // Use optimized refresh
+      fetchAllSettingsData();
+    } catch (error) {
+      message.error('Failed to delete tax category');
+      console.error(error);
+    }
   };
 
   const handleTaxSave = async (values) => {
-    const newTax = {
-      tax_category_id: taxModal.editing ? taxModal.editing.tax_category_id : Date.now(),
-      tax_category_name: values.tax_category_name,
-      tax_rate: values.tax_rate,
-      effective_date: values.effective_date?.toISOString().split('T')[0],
-      is_active: values.is_active
-    };
+    try {
+      const payload = {
+        ...values,
+        effective_date: values.effective_date.format('YYYY-MM-DD')
+      };
 
-    if (taxModal.editing) {
-      setTaxCategories(taxCategories.map(t => t.tax_category_id === newTax.tax_category_id ? newTax : t));
-      message.success('Tax category updated');
-    } else {
-      setTaxCategories([...taxCategories, newTax]);
-      message.success('Tax category added');
+      const url = taxModal.editing 
+        ? `${API_BASE_URL}/tax-categories/${taxModal.editing.tax_category_id}`
+        : `${API_BASE_URL}/tax-categories`;
+
+      const response = await fetch(url, {
+        method: taxModal.editing ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error('Failed to save tax category');
+      
+      message.success(`Tax category ${taxModal.editing ? 'updated' : 'added'}`);
+      setTaxModal({ open: false, editing: null });
+      taxForm.resetFields();
+      // Use optimized refresh
+      fetchAllSettingsData();
+    } catch (error) {
+      message.error('Failed to save tax category');
+      console.error(error);
     }
-    setTaxModal({ open: false, editing: null });
-    taxForm.resetFields();
   };
 
   // Handlers for Payment Methods
@@ -409,27 +651,44 @@ function SettingsPage() {
     });
   };
 
-  const handleDeletePayment = (id) => {
-    setPaymentMethods(paymentMethods.filter(p => p.payment_method_id !== id));
-    message.success('Payment method deleted');
+  const handleDeletePayment = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/payment-methods/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete payment method');
+      message.success('Payment method deleted');
+      // Use optimized refresh
+      fetchAllSettingsData();
+    } catch (error) {
+      message.error('Failed to delete payment method');
+      console.error(error);
+    }
   };
 
   const handlePaymentSave = async (values) => {
-    const newPayment = {
-      payment_method_id: paymentModal.editing ? paymentModal.editing.payment_method_id : Date.now(),
-      method_name: values.method_name,
-      is_active: values.is_active
-    };
+    try {
+      const url = paymentModal.editing 
+        ? `${API_BASE_URL}/payment-methods/${paymentModal.editing.payment_method_id}`
+        : `${API_BASE_URL}/payment-methods`;
 
-    if (paymentModal.editing) {
-      setPaymentMethods(paymentMethods.map(p => p.payment_method_id === newPayment.payment_method_id ? newPayment : p));
-      message.success('Payment method updated');
-    } else {
-      setPaymentMethods([...paymentMethods, newPayment]);
-      message.success('Payment method added');
+      const response = await fetch(url, {
+        method: paymentModal.editing ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values)
+      });
+
+      if (!response.ok) throw new Error('Failed to save payment method');
+      
+      message.success(`Payment method ${paymentModal.editing ? 'updated' : 'added'}`);
+      setPaymentModal({ open: false, editing: null });
+      paymentForm.resetFields();
+      // Use optimized refresh
+      fetchAllSettingsData();
+    } catch (error) {
+      message.error('Failed to save payment method');
+      console.error(error);
     }
-    setPaymentModal({ open: false, editing: null });
-    paymentForm.resetFields();
   };
 
   // Handlers for Expense Categories
@@ -440,26 +699,44 @@ function SettingsPage() {
     });
   };
 
-  const handleDeleteExpense = (id) => {
-    setExpenseCategories(expenseCategories.filter(e => e.category_id !== id));
-    message.success('Expense category deleted');
+  const handleDeleteExpense = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/expense-categories/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete expense category');
+      message.success('Expense category deleted');
+      // Use optimized refresh
+      fetchAllSettingsData();
+    } catch (error) {
+      message.error('Failed to delete expense category');
+      console.error(error);
+    }
   };
 
   const handleExpenseSave = async (values) => {
-    const newExpense = {
-      category_id: expenseModal.editing ? expenseModal.editing.category_id : Date.now(),
-      category_name: values.category_name
-    };
+    try {
+      const url = expenseModal.editing 
+        ? `${API_BASE_URL}/expense-categories/${expenseModal.editing.category_id}`
+        : `${API_BASE_URL}/expense-categories`;
 
-    if (expenseModal.editing) {
-      setExpenseCategories(expenseCategories.map(e => e.category_id === newExpense.category_id ? newExpense : e));
-      message.success('Expense category updated');
-    } else {
-      setExpenseCategories([...expenseCategories, newExpense]);
-      message.success('Expense category added');
+      const response = await fetch(url, {
+        method: expenseModal.editing ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values)
+      });
+
+      if (!response.ok) throw new Error('Failed to save expense category');
+      
+      message.success(`Expense category ${expenseModal.editing ? 'updated' : 'added'}`);
+      setExpenseModal({ open: false, editing: null });
+      expenseForm.resetFields();
+      // Use optimized refresh
+      fetchAllSettingsData();
+    } catch (error) {
+      message.error('Failed to save expense category');
+      console.error(error);
     }
-    setExpenseModal({ open: false, editing: null });
-    expenseForm.resetFields();
   };
 
   // Handlers for Roles
@@ -471,27 +748,44 @@ function SettingsPage() {
     });
   };
 
-  const handleDeleteRole = (id) => {
-    setRoles(roles.filter(r => r.role_id !== id));
-    message.success('Role deleted');
+  const handleDeleteRole = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/roles/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete role');
+      message.success('Role deleted');
+      // Use optimized refresh
+      fetchAllSettingsData();
+    } catch (error) {
+      message.error('Failed to delete role');
+      console.error(error);
+    }
   };
 
   const handleRoleSave = async (values) => {
-    const newRole = {
-      role_id: roleModal.editing ? roleModal.editing.role_id : Date.now(),
-      role_name: values.role_name,
-      description: values.description
-    };
+    try {
+      const url = roleModal.editing 
+        ? `${API_BASE_URL}/roles/${roleModal.editing.role_id}`
+        : `${API_BASE_URL}/roles`;
 
-    if (roleModal.editing) {
-      setRoles(roles.map(r => r.role_id === newRole.role_id ? newRole : r));
-      message.success('Role updated');
-    } else {
-      setRoles([...roles, newRole]);
-      message.success('Role added');
+      const response = await fetch(url, {
+        method: roleModal.editing ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values)
+      });
+
+      if (!response.ok) throw new Error('Failed to save role');
+      
+      message.success(`Role ${roleModal.editing ? 'updated' : 'added'}`);
+      setRoleModal({ open: false, editing: null });
+      roleForm.resetFields();
+      // Use optimized refresh
+      fetchAllSettingsData();
+    } catch (error) {
+      message.error('Failed to save role');
+      console.error(error);
     }
-    setRoleModal({ open: false, editing: null });
-    roleForm.resetFields();
   };
 
   // Handlers for System Settings
@@ -505,22 +799,348 @@ function SettingsPage() {
   };
 
   const handleSettingSave = async (values) => {
-    const newSetting = {
-      setting_id: settingModal.editing ? settingModal.editing.setting_id : Date.now(),
-      setting_key: values.setting_key,
-      setting_value: values.setting_value,
-      store_id: values.store_id
-    };
+    try {
+      const url = settingModal.editing 
+        ? `${API_BASE_URL}/system/${settingModal.editing.setting_id}`
+        : `${API_BASE_URL}/system`;
 
-    if (settingModal.editing) {
-      setSystemSettings(systemSettings.map(s => s.setting_id === newSetting.setting_id ? newSetting : s));
-      message.success('Setting updated');
-    } else {
-      setSystemSettings([...systemSettings, newSetting]);
-      message.success('Setting added');
+      const response = await fetch(url, {
+        method: settingModal.editing ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values)
+      });
+
+      if (!response.ok) throw new Error('Failed to save setting');
+      
+      message.success(`Setting ${settingModal.editing ? 'updated' : 'added'}`);
+      setSettingModal({ open: false, editing: null });
+      settingForm.resetFields();
+      // Use optimized refresh
+      fetchAllSettingsData();
+    } catch (error) {
+      message.error('Failed to save setting');
+      console.error(error);
     }
-    setSettingModal({ open: false, editing: null });
-    settingForm.resetFields();
+  };
+
+  // Store management functions
+  useEffect(() => {
+    // Stores are now loaded with bulk data, no need for separate fetch
+  }, []);
+
+  function handleAddStore(values) {
+    setSavingStore(true);
+    const isEdit = !!editingStore;
+    const url = isEdit ? `http://localhost:8000/inventory/stores/${editingStore.store_id}` : 'http://localhost:8000/inventory/stores';
+    const method = isEdit ? 'PUT' : 'POST';
+    fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values)
+    })
+      .then(async r => {
+        if (!r.ok) throw new Error(await r.text());
+        return r.json();
+      })
+      .then(store => {
+        setStoreDrawerOpen(false);
+        setEditingStore(null);
+        setSavingStore(false);
+        message.success(isEdit ? 'Store updated' : 'Store added');
+        // Use optimized refresh
+        fetchAllSettingsData();
+      })
+      .catch(err => {
+        setSavingStore(false);
+        message.error(isEdit ? 'Failed to update store' : 'Failed to add store');
+      });
+  }
+
+  function handleDeleteStore(store) {
+    // Confirm before deleting
+    window.confirm = window.confirm || ((msg) => true); // fallback for environments without confirm
+    if (window.confirm(`Are you sure you want to delete store "${store.store_name}"?`)) {
+      fetch(`http://localhost:8000/inventory/stores/${store.store_id}`, {
+        method: 'DELETE',
+      })
+        .then(async r => {
+          if (!r.ok) throw new Error(await r.text());
+          message.success('Store deleted');
+          // Use optimized refresh
+          fetchAllSettingsData();
+        })
+        .catch(() => message.error('Failed to delete store'));
+    }
+  }
+
+  // Handlers for POS Terminals
+  const handleEditPosTerminal = (record) => {
+    setPosTerminalModal({ open: true, editing: record });
+    posTerminalForm.setFieldsValue({
+      terminal_name: record.terminal_name,
+      ip_address: record.ip_address,
+      store_id: record.store_id,
+      is_active: record.is_active
+    });
+  };
+
+  const handleDeletePosTerminal = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/pos-terminals/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete POS terminal');
+      message.success('POS terminal deleted');
+      // Use optimized refresh
+      fetchAllSettingsData();
+    } catch (error) {
+      message.error('Failed to delete POS terminal');
+      console.error(error);
+    }
+  };
+
+  const handlePosTerminalSave = async (values) => {
+    try {
+      const url = posTerminalModal.editing 
+        ? `${API_BASE_URL}/pos-terminals/${posTerminalModal.editing.terminal_id}`
+        : `${API_BASE_URL}/pos-terminals`;
+
+      const response = await fetch(url, {
+        method: posTerminalModal.editing ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values)
+      });
+
+      if (!response.ok) throw new Error('Failed to save POS terminal');
+      
+      message.success(`POS terminal ${posTerminalModal.editing ? 'updated' : 'added'}`);
+      setPosTerminalModal({ open: false, editing: null });
+      posTerminalForm.resetFields();
+      // Use optimized refresh
+      fetchAllSettingsData();
+    } catch (error) {
+      message.error('Failed to save POS terminal');
+      console.error(error);
+    }
+  };
+
+  // Handlers for Role Permissions
+  const handleRoleClick = (role) => {
+    // This could be used to highlight selected role or show role details
+    console.log('Role clicked:', role);
+  };
+
+  const handleRemoveRolePermission = async (roleId, permissionId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/roles/${roleId}/permissions/${permissionId}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to remove permission from role');
+      message.success('Permission removed from role');
+      // Use optimized refresh
+      fetchAllSettingsData();
+    } catch (error) {
+      message.error('Failed to remove permission');
+      console.error(error);
+    }
+  };
+
+  const handleRemoveAllRolePermissions = async (roleId) => {
+    const roleName = roles.find(r => r.role_id === roleId)?.role_name || 'Unknown Role';
+    if (window.confirm(`Are you sure you want to remove all permissions from the "${roleName}" role?`)) {
+      try {
+        // Get all permissions for this role
+        const rolePerms = rolePermissions.filter(rp => rp.role_id === roleId);
+        // Remove each permission
+        for (const rp of rolePerms) {
+          await handleRemoveRolePermission(roleId, rp.permission_id);
+        }
+        message.success(`All permissions removed from ${roleName} role`);
+      } catch (error) {
+        message.error('Failed to remove all permissions');
+        console.error(error);
+      }
+    }
+  };
+
+  const handleRolePermissionSave = async (values) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/roles/${values.role_id}/permissions/${values.permission_id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) throw new Error('Failed to assign permission to role');
+      
+      message.success('Permission assigned to role');
+      setRolePermissionModal({ open: false, editing: null });
+      rolePermissionForm.resetFields();
+      
+      // Use optimized refresh
+      fetchAllSettingsData();
+    } catch (error) {
+      message.error('Failed to assign permission');
+      console.error(error);
+    }
+  };
+
+  // Predefined Settings Templates
+  const settingTemplates = [
+    {
+      key: 'business_info',
+      label: 'Business Information',
+      settings: [
+        { setting_key: 'store_name', setting_value: '', label: 'Store Name' },
+        { setting_key: 'store_address', setting_value: '', label: 'Store Address' },
+        { setting_key: 'store_phone', setting_value: '', label: 'Phone Number' },
+        { setting_key: 'store_email', setting_value: '', label: 'Email' },
+        { setting_key: 'tax_number', setting_value: '', label: 'Tax Registration Number' }
+      ]
+    },
+    {
+      key: 'receipt_settings',
+      label: 'Receipt Settings',
+      settings: [
+        { setting_key: 'receipt_header', setting_value: 'Thank you for shopping with us!', label: 'Receipt Header' },
+        { setting_key: 'receipt_footer', setting_value: 'Please come again!', label: 'Receipt Footer' },
+        { setting_key: 'show_tax_on_receipt', setting_value: 'true', label: 'Show Tax on Receipt' },
+        { setting_key: 'receipt_print_copies', setting_value: '1', label: 'Number of Receipt Copies' }
+      ]
+    },
+    {
+      key: 'display_settings',
+      label: 'Display Settings',
+      settings: [
+        { setting_key: 'currency_symbol', setting_value: '$', label: 'Currency Symbol' },
+        { setting_key: 'date_format', setting_value: 'MM/DD/YYYY', label: 'Date Format' },
+        { setting_key: 'time_format', setting_value: '12', label: 'Time Format (12/24)' }
+      ]
+    },
+    {
+      key: 'invoice_settings',
+      label: 'Invoice Settings',
+      settings: [
+        { setting_key: 'invoice_prefix', setting_value: 'INV-', label: 'Invoice Number Prefix' },
+        { setting_key: 'invoice_starting_number', setting_value: '1001', label: 'Starting Invoice Number' },
+        { setting_key: 'invoice_terms', setting_value: 'Net 30', label: 'Default Payment Terms' }
+      ]
+    }
+  ];
+
+  // Quick Add Settings Modal
+  const [quickAddModal, setQuickAddModal] = useState({ open: false, template: null });
+
+  const handleQuickAdd = (template) => {
+    setQuickAddModal({ open: true, template });
+  };
+
+  const handleQuickAddSave = async (values) => {
+    try {
+      setLoading(true);
+      const template = settingTemplates.find(t => t.key === quickAddModal.template);
+      if (!template) return;
+
+      // Create all settings from the template
+      const settingsToCreate = template.settings.map(setting => ({
+        setting_key: setting.setting_key,
+        setting_value: values[setting.setting_key] || setting.setting_value,
+        store_id: values.store_id || null
+      }));
+
+      for (const setting of settingsToCreate) {
+        const response = await fetch(`${API_BASE_URL}/settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(setting)
+        });
+
+        if (!response.ok) throw new Error(`Failed to create setting: ${setting.setting_key}`);
+      }
+
+      message.success(`${template.label} settings added successfully`);
+      // Use optimized refresh
+      fetchAllSettingsData();
+      setQuickAddModal({ open: false, template: null });
+    } catch (error) {
+      message.error('Failed to add settings');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add Quick Settings button to the toolbar
+  const settingsToolbar = (
+    <Space>
+      <Button type="primary" onClick={() => setSettingModal({ open: true, editing: null })} icon={<PlusOutlined />}>
+        Add Setting
+      </Button>
+      <Dropdown
+        menu={{
+          items: settingTemplates.map(template => ({
+            key: template.key,
+            label: template.label,
+            onClick: () => handleQuickAdd(template.key)
+          }))
+        }}
+      >
+        <Button icon={<SettingOutlined />}>
+          Quick Add Settings <DownOutlined />
+        </Button>
+      </Dropdown>
+    </Space>
+  );
+
+  // Quick Add Settings Modal Component
+  const QuickAddSettingsModal = () => {
+    const template = settingTemplates.find(t => t.key === quickAddModal.template);
+    if (!template) return null;
+
+    return (
+      <Modal
+        title={`Add ${template.label}`}
+        open={quickAddModal.open}
+        onCancel={() => setQuickAddModal({ open: false, template: null })}
+        footer={null}
+        width={600}
+      >
+        <Form
+          layout="vertical"
+          onFinish={handleQuickAddSave}
+        >
+          {template.settings.map(setting => (
+            <Form.Item
+              key={setting.setting_key}
+              name={setting.setting_key}
+              label={setting.label}
+              initialValue={setting.setting_value}
+            >
+              <Input placeholder={`Enter ${setting.label.toLowerCase()}`} />
+            </Form.Item>
+          ))}
+          <Form.Item
+            name="store_id"
+            label="Store ID (Optional)"
+          >
+            <InputNumber
+              min={1}
+              style={{ width: '100%' }}
+              placeholder="Leave empty for global setting"
+            />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                Save All Settings
+              </Button>
+              <Button onClick={() => setQuickAddModal({ open: false, template: null })}>
+                Cancel
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+    );
   };
 
   return (
@@ -541,13 +1161,32 @@ function SettingsPage() {
         </Text>
       </div>
 
+      <Alert
+        message="System Settings Guide"
+        description={
+          <div>
+            <p><strong>Tax Categories:</strong> Set up different tax rates (e.g., 18% for regular items, 0% for food items)</p>
+            <p><strong>Payment Methods:</strong> Configure how customers can pay (Cash, Credit Card, etc.)</p>
+            <p><strong>Expense Categories:</strong> Organize business expenses (Rent, Utilities, etc.)</p>
+            <p><strong>Roles & Permissions:</strong> Define what different types of users can do in the system</p>
+            <p><strong>Stores:</strong> Manage different store locations</p>
+            <p><strong>POS Terminals:</strong> Configure cash registers and payment devices</p>
+            <p><strong>System Settings:</strong> General system configuration like company name, currency, etc.</p>
+          </div>
+        }
+        type="info"
+        showIcon
+        style={{ marginBottom: 24 }}
+      />
+
+      <Spin spinning={loading}>
       <Card
         style={{
           borderRadius: theme.borderRadius,
           boxShadow: theme.cardShadow,
           background: theme.cardBg
         }}
-        bodyStyle={{ padding: 0 }}
+          styles={{ body: { padding: 0 } }}
       >
         <Tabs
           activeKey={activeTab}
@@ -671,17 +1310,37 @@ function SettingsPage() {
                 <span>
                   <UserOutlined style={{ marginRight: 8 }} />
                   Roles & Permissions
+                  <Tooltip title="Roles are like job titles (Manager, Cashier). Permissions are specific actions (create sales, view reports). Here you define what each role can do.">
+                    <InfoCircleOutlined style={{ marginLeft: 4, color: theme.primary, cursor: 'help' }} />
+                  </Tooltip>
                 </span>
               ),
               children: (
                 <div style={{ padding: '24px 0' }}>
+                  <Alert
+                    message="Understanding Roles and Permissions"
+                    description={
+                      <div>
+                        <p><strong>Roles</strong> are like job titles (e.g., Manager, Cashier). Each role has specific permissions.</p>
+                        <p><strong>Permissions</strong> are specific actions that can be done in the system (e.g., create sales, view reports).</p>
+                        <p><strong>Example:</strong> A "Manager" role might have permissions to "create sales", "view reports", and "manage inventory".</p>
+                        <p><strong>Note:</strong> You create roles and assign permissions here. You create actual users and assign them roles in the Users page.</p>
+                      </div>
+                    }
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: 24 }}
+                  />
                   <Row gutter={[24, 24]}>
-                    <Col span={12}>
+                    <Col span={8}>
                       <Card
                         title={
                           <span>
                             <UserOutlined style={{ marginRight: 8 }} />
                             Roles
+                            <Tooltip title="Roles are like job titles. Each role defines what type of user someone is (e.g., Manager, Cashier, Stock Keeper).">
+                              <InfoCircleOutlined style={{ marginLeft: 8, color: theme.primary, cursor: 'help' }} />
+                            </Tooltip>
                           </span>
                         }
                         extra={
@@ -702,40 +1361,137 @@ function SettingsPage() {
                           rowKey="role_id"
                           pagination={false}
                           size="small"
+                          onRow={(record) => ({
+                            onClick: () => handleRoleClick(record),
+                            style: { cursor: 'pointer' }
+                          })}
                         />
                       </Card>
                     </Col>
-                    <Col span={12}>
+                    <Col span={8}>
                       <Card
                         title={
                           <span>
                             <SafetyCertificateOutlined style={{ marginRight: 8 }} />
                             Available Permissions
+                            <Tooltip title="Permissions are specific actions that can be done in the system. Each permission allows a user to do one specific thing (e.g., create sales, view reports).">
+                              <InfoCircleOutlined style={{ marginLeft: 8, color: theme.primary, cursor: 'help' }} />
+                            </Tooltip>
                           </span>
                         }
                         style={{ borderRadius: theme.borderRadius }}
                       >
                         <div style={{ maxHeight: 400, overflowY: 'auto' }}>
                           {permissions.map(permission => (
-                            <div
+                            <Tooltip 
                               key={permission.permission_id}
-                              style={{
-                                padding: '8px 12px',
-                                border: '1px solid #f0f0f0',
-                                borderRadius: 6,
-                                marginBottom: 8,
-                                background: '#fafafa'
-                              }}
+                              title={permission.help_text} 
+                              placement="topLeft"
                             >
-                              <Text strong style={{ fontSize: 13 }}>
-                                {permission.permission_name}
-                              </Text>
-                              <br />
-                              <Text type="secondary" style={{ fontSize: 12 }}>
-                                {permission.description}
-                              </Text>
-                            </div>
+                              <div
+                                style={{
+                                  padding: '8px 12px',
+                                  border: '1px solid #f0f0f0',
+                                  borderRadius: 6,
+                                  marginBottom: 8,
+                                  background: '#fafafa',
+                                  cursor: 'help'
+                                }}
+                              >
+                                <Text strong style={{ fontSize: 13 }}>
+                                  {permission.permission_name}
+                                </Text>
+                                <br />
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                  {permission.description}
+                                </Text>
+                              </div>
+                            </Tooltip>
                           ))}
+                        </div>
+                      </Card>
+                    </Col>
+                    <Col span={8}>
+                      <Card
+                        title={
+                          <span>
+                            <CheckCircleOutlined style={{ marginRight: 8 }} />
+                            Role Permissions
+                            <Tooltip title="This shows what each role can do. Each role can have multiple permissions. For example, a Manager can create sales, view reports, and manage inventory.">
+                              <InfoCircleOutlined style={{ marginLeft: 8, color: theme.primary, cursor: 'help' }} />
+                            </Tooltip>
+                          </span>
+                        }
+                        extra={
+                          <Button
+                            type="primary"
+                            size="small"
+                            icon={<PlusOutlined />}
+                            onClick={() => setRolePermissionModal({ open: true, editing: null })}
+                          >
+                            Assign Permission
+                          </Button>
+                        }
+                        style={{ borderRadius: theme.borderRadius }}
+                      >
+                        <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+                          {(() => {
+                            // Group permissions by role
+                            const groupedPermissions = {};
+                            rolePermissions.forEach(rp => {
+                              if (!groupedPermissions[rp.role_id]) {
+                                groupedPermissions[rp.role_id] = {
+                                  role_name: rp.role_name,
+                                  permissions: []
+                                };
+                              }
+                              groupedPermissions[rp.role_id].permissions.push(rp.permission_name);
+                            });
+
+                            return Object.entries(groupedPermissions).map(([roleId, roleData]) => (
+                              <div
+                                key={roleId}
+                                style={{
+                                  padding: '12px',
+                                  border: '1px solid #e6f7ff',
+                                  borderRadius: 8,
+                                  marginBottom: 12,
+                                  background: '#f6ffed'
+                                }}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                  <Text strong style={{ fontSize: 14, color: theme.primary }}>
+                                    {roleData.role_name}
+                                  </Text>
+                                  <Text type="secondary" style={{ fontSize: 11 }}>
+                                    {roleData.permissions.length} permission{roleData.permissions.length !== 1 ? 's' : ''}
+                                  </Text>
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                  {roleData.permissions.map((permission, index) => (
+                                    <Tag
+                                      key={index}
+                                      color="blue"
+                                      style={{ margin: 0, fontSize: 11 }}
+                                    >
+                                      {permission}
+                                    </Tag>
+                                  ))}
+                                </div>
+                                <div style={{ marginTop: 8, textAlign: 'right' }}>
+                                  <Button
+                                    type="text"
+                                    size="small"
+                                    danger
+                                    icon={<DeleteOutlined />}
+                                    onClick={() => handleRemoveAllRolePermissions(parseInt(roleId))}
+                                  >
+                                    Remove All
+                                  </Button>
+                                </div>
+                              </div>
+                            ));
+                          })()}
                         </div>
                       </Card>
                     </Col>
@@ -760,13 +1516,7 @@ function SettingsPage() {
                       onChange={setSearchText}
                       style={{ width: 300 }}
                     />
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={() => setSettingModal({ open: true, editing: null })}
-                    >
-                      Add Setting
-                    </Button>
+                    {settingsToolbar}
                   </div>
                   <Table
                     columns={settingColumns}
@@ -780,10 +1530,89 @@ function SettingsPage() {
                   />
                 </div>
               )
+            },
+            {
+              key: 'stores',
+              label: (
+                <span>
+                  <ShopOutlined style={{ marginRight: 8 }} />
+                  Stores
+                </span>
+              ),
+              children: (
+                <div style={{ padding: '24px 0' }}>
+                  <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <SearchBar
+                      placeholder="Search stores..."
+                      value={searchText}
+                      onChange={setSearchText}
+                      style={{ width: 300 }}
+                    />
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={() => setStoreDrawerOpen(true)}
+                    >
+                      Add Store
+                    </Button>
+                  </div>
+                  <Table
+                    columns={storeColumns}
+                    dataSource={stores.filter(s => 
+                      s.store_name.toLowerCase().includes(searchText.toLowerCase()) ||
+                      s.address.toLowerCase().includes(searchText.toLowerCase()) ||
+                      s.city.toLowerCase().includes(searchText.toLowerCase())
+                    )}
+                    rowKey="store_id"
+                    pagination={{ pageSize: 10 }}
+                    size="middle"
+                  />
+                </div>
+              )
+            },
+            {
+              key: 'pos-terminals',
+              label: (
+                <span>
+                  <BankOutlined style={{ marginRight: 8 }} />
+                  POS Terminals
+                </span>
+              ),
+              children: (
+                <div style={{ padding: '24px 0' }}>
+                  <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <SearchBar
+                      placeholder="Search POS terminals..."
+                      value={searchText}
+                      onChange={setSearchText}
+                      style={{ width: 300 }}
+                    />
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={() => setPosTerminalModal({ open: true, editing: null })}
+                    >
+                      Add POS Terminal
+                    </Button>
+                  </div>
+                  <Table
+                    columns={posTerminalColumns}
+                    dataSource={posTerminals.filter(t => 
+                      t.terminal_name.toLowerCase().includes(searchText.toLowerCase()) ||
+                      t.ip_address.toLowerCase().includes(searchText.toLowerCase()) ||
+                      t.store_name.toLowerCase().includes(searchText.toLowerCase())
+                    )}
+                    rowKey="terminal_id"
+                    pagination={{ pageSize: 10 }}
+                    size="middle"
+                  />
+                </div>
+              )
             }
           ]}
         />
       </Card>
+      </Spin>
 
       {/* Tax Category Modal */}
       <Modal
@@ -1037,6 +1866,150 @@ function SettingsPage() {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* POS Terminal Modal */}
+      <Modal
+        title={posTerminalModal.editing ? 'Edit POS Terminal' : 'Add POS Terminal'}
+        open={posTerminalModal.open}
+        onCancel={() => {
+          setPosTerminalModal({ open: false, editing: null });
+          posTerminalForm.resetFields();
+        }}
+        footer={null}
+        width={500}
+      >
+        <Form
+          form={posTerminalForm}
+          layout="vertical"
+          onFinish={handlePosTerminalSave}
+        >
+          <Form.Item
+            name="terminal_name"
+            label="Terminal Name"
+            rules={[{ required: true, message: 'Please enter terminal name' }]}
+          >
+            <Input placeholder="e.g., POS-001" />
+          </Form.Item>
+          <Form.Item
+            name="ip_address"
+            label="IP Address"
+            rules={[{ required: true, message: 'Please enter IP address' }]}
+          >
+            <Input placeholder="e.g., 192.168.1.100" />
+          </Form.Item>
+          <Form.Item
+            name="store_id"
+            label="Store"
+            rules={[{ required: true, message: 'Please select a store' }]}
+          >
+            <Select placeholder="Select a store">
+              {stores.map(store => (
+                <Select.Option key={store.store_id} value={store.store_id}>
+                  {store.store_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="is_active"
+            label="Active"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                {posTerminalModal.editing ? 'Update' : 'Add'}
+              </Button>
+              <Button onClick={() => {
+                setPosTerminalModal({ open: false, editing: null });
+                posTerminalForm.resetFields();
+              }}>
+                Cancel
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Role Permission Modal */}
+      <Modal
+        title="Assign Permission to Role"
+        open={rolePermissionModal.open}
+        onCancel={() => {
+          setRolePermissionModal({ open: false, editing: null });
+          rolePermissionForm.resetFields();
+        }}
+        footer={null}
+        width={600}
+      >
+        <Alert
+          message="What does this do?"
+          description="This allows you to give a specific role the ability to perform a specific action. For example, you can give the 'Manager' role the permission to 'view reports' so that all managers can see sales reports."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        <Form
+          form={rolePermissionForm}
+          layout="vertical"
+          onFinish={handleRolePermissionSave}
+        >
+          <Form.Item
+            name="role_id"
+            label="Role"
+            rules={[{ required: true, message: 'Please select a role' }]}
+          >
+            <Select placeholder="Select a role">
+              {roles.map(role => (
+                <Select.Option key={role.role_id} value={role.role_id}>
+                  {role.role_name} - {role.description}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="permission_id"
+            label="Permission"
+            rules={[{ required: true, message: 'Please select a permission' }]}
+          >
+            <Select placeholder="Select a permission">
+              {permissions.map(permission => (
+                <Select.Option key={permission.permission_id} value={permission.permission_id}>
+                  {permission.permission_name} - {permission.description}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                Assign Permission
+              </Button>
+              <Button onClick={() => {
+                setRolePermissionModal({ open: false, editing: null });
+                rolePermissionForm.resetFields();
+              }}>
+                Cancel
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Store Drawer */}
+      <StoreDrawer
+        open={storeDrawerOpen}
+        onClose={() => { setStoreDrawerOpen(false); setEditingStore(null); }}
+        onSave={handleAddStore}
+        saving={savingStore}
+        initialValues={editingStore || {}}
+        isEditing={!!editingStore}
+      />
+
+      {/* Add Quick Settings Modal */}
+      <QuickAddSettingsModal />
     </div>
   );
 }

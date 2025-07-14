@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Input, Select, Space, Typography, Tooltip, Row, Col, Modal, message, Spin } from 'antd';
+import { Table, Button, Input, Select, Space, Typography, Tooltip, Row, Col, Modal, message, Spin, Tag } from 'antd';
 const { Text } = Typography;
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, FolderAddOutlined, TrademarkCircleOutlined, BarsOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { theme } from '../theme';
@@ -124,6 +124,23 @@ function ProductsPage() {
       key: 'tax_category_id', 
       width: 100, 
       render: id => <Text>{taxCategories.find(t => t.tax_category_id === id)?.tax_category_name || '-'}</Text> 
+    },
+    { 
+      title: 'Tax Amount', 
+      dataIndex: 'tax_category_id', 
+      key: 'tax_amount', 
+      width: 120, 
+      align: 'right',
+      render: (id, record) => {
+        const taxCategory = taxCategories.find(t => t.tax_category_id === id);
+        if (!taxCategory || !record.retail_price) return <Text type="secondary">-</Text>;
+        const taxAmount = (record.retail_price * taxCategory.tax_rate) / 100;
+        return (
+          <Tag color="orange" style={{ margin: 0 }}>
+            ₨ {taxAmount.toFixed(2)}
+          </Tag>
+        );
+      }
     },
     { 
       title: 'Barcode', 

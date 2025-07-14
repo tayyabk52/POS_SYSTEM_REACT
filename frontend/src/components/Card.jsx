@@ -51,8 +51,8 @@ const Card = ({
         border: bordered ? `1px solid ${theme.borderColorLight || '#f0f0f0'}` : 'none',
         ...style 
       }}
-      bodyStyle={{ 
-        padding: getPadding()
+      styles={{ 
+        body: { padding: getPadding() }
       }}
       {...props}
     >

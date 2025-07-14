@@ -194,7 +194,9 @@ function DashboardPage() {
       <Card
         title="Stores List"
         style={{ marginTop: 32, borderRadius: theme.borderRadius, boxShadow: theme.cardShadow }}
-        bodyStyle={{ padding: 24 }}
+        styles={{
+          body: { padding: 24 }
+        }}
       >
         <Table
           columns={storeColumns}

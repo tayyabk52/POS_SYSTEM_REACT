@@ -3,6 +3,8 @@ from sqlalchemy import and_, or_, func
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import psycopg2
+from psycopg2.extras import RealDictCursor
+from psycopg2 import pool
 import os
 from dotenv import load_dotenv
 from . import models, schemas
@@ -17,14 +19,34 @@ DB_NAME = os.getenv('DB_NAME', 'POSSYSTEM')
 DB_USER = os.getenv('DB_USER', 'postgres')
 DB_PASS = os.getenv('DB_PASS', 'admin')
 
+# Database connection pool for better performance
+_connection_pool = None
+
+def get_connection_pool():
+    """Get or create database connection pool"""
+    global _connection_pool
+    if _connection_pool is None:
+        _connection_pool = psycopg2.pool.SimpleConnectionPool(
+            minconn=1,
+            maxconn=20,
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASS,
+            host=DB_HOST,
+            port=DB_PORT,
+            cursor_factory=RealDictCursor
+        )
+    return _connection_pool
+
 def get_db_connection():
-    return psycopg2.connect(
-        dbname=DB_NAME,
-        user=DB_USER,
-        password=DB_PASS,
-        host=DB_HOST,
-        port=DB_PORT
-    )
+    """Get a database connection from the pool with RealDictCursor"""
+    pool = get_connection_pool()
+    return pool.getconn()
+
+def return_db_connection(conn):
+    """Return a database connection to the pool"""
+    pool = get_connection_pool()
+    pool.putconn(conn)
 
 # Store CRUD operations
 def get_stores() -> List[Dict[str, Any]]:
@@ -40,22 +62,22 @@ def get_stores() -> List[Dict[str, Any]]:
         stores = []
         for row in cur.fetchall():
             stores.append({
-                'store_id': row[0],
-                'store_name': row[1],
-                'address': row[2],
-                'phone_number': row[3],
-                'email': row[4],
-                'city': row[5],
-                'province': row[6],
-                'postal_code': row[7],
-                'is_active': row[8],
-                'created_at': row[9],
-                'updated_at': row[10]
+                'store_id': row['store_id'],
+                'store_name': row['store_name'],
+                'address': row['address'],
+                'phone_number': row['phone_number'],
+                'email': row['email'],
+                'city': row['city'],
+                'province': row['province'],
+                'postal_code': row['postal_code'],
+                'is_active': row['is_active'],
+                'created_at': row['created_at'],
+                'updated_at': row['updated_at']
             })
         return stores
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 def get_store(store_id: int) -> Optional[Dict[str, Any]]:
     conn = get_db_connection()
@@ -70,22 +92,22 @@ def get_store(store_id: int) -> Optional[Dict[str, Any]]:
         row = cur.fetchone()
         if row:
             return {
-                'store_id': row[0],
-                'store_name': row[1],
-                'address': row[2],
-                'phone_number': row[3],
-                'email': row[4],
-                'city': row[5],
-                'province': row[6],
-                'postal_code': row[7],
-                'is_active': row[8],
-                'created_at': row[9],
-                'updated_at': row[10]
+                'store_id': row['store_id'],
+                'store_name': row['store_name'],
+                'address': row['address'],
+                'phone_number': row['phone_number'],
+                'email': row['email'],
+                'city': row['city'],
+                'province': row['province'],
+                'postal_code': row['postal_code'],
+                'is_active': row['is_active'],
+                'created_at': row['created_at'],
+                'updated_at': row['updated_at']
             }
         return None
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 def create_store(store: 'schemas.StoreCreate') -> dict:
     conn = get_db_connection()
@@ -109,23 +131,23 @@ def create_store(store: 'schemas.StoreCreate') -> dict:
         conn.commit()
         if row:
             return {
-                'store_id': row[0],
-                'store_name': row[1],
-                'address': row[2],
-                'phone_number': row[3],
-                'email': row[4],
-                'city': row[5],
-                'province': row[6],
-                'postal_code': row[7],
-                'is_active': row[8],
-                'created_at': row[9],
-                'updated_at': row[10]
+                'store_id': row['store_id'],
+                'store_name': row['store_name'],
+                'address': row['address'],
+                'phone_number': row['phone_number'],
+                'email': row['email'],
+                'city': row['city'],
+                'province': row['province'],
+                'postal_code': row['postal_code'],
+                'is_active': row['is_active'],
+                'created_at': row['created_at'],
+                'updated_at': row['updated_at']
             }
         else:
             raise Exception('Failed to create store')
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 def update_store(store_id: int, store: 'schemas.StoreCreate') -> dict:
     conn = get_db_connection()
@@ -159,23 +181,23 @@ def update_store(store_id: int, store: 'schemas.StoreCreate') -> dict:
         conn.commit()
         if row:
             return {
-                'store_id': row[0],
-                'store_name': row[1],
-                'address': row[2],
-                'phone_number': row[3],
-                'email': row[4],
-                'city': row[5],
-                'province': row[6],
-                'postal_code': row[7],
-                'is_active': row[8],
-                'created_at': row[9],
-                'updated_at': row[10]
+                'store_id': row['store_id'],
+                'store_name': row['store_name'],
+                'address': row['address'],
+                'phone_number': row['phone_number'],
+                'email': row['email'],
+                'city': row['city'],
+                'province': row['province'],
+                'postal_code': row['postal_code'],
+                'is_active': row['is_active'],
+                'created_at': row['created_at'],
+                'updated_at': row['updated_at']
             }
         else:
             raise Exception('Failed to update store')
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 def delete_store(store_id: int):
     conn = get_db_connection()
@@ -187,7 +209,7 @@ def delete_store(store_id: int):
         conn.commit()
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 # User CRUD operations
 def get_users() -> List[Dict[str, Any]]:
@@ -204,23 +226,23 @@ def get_users() -> List[Dict[str, Any]]:
         users = []
         for row in cur.fetchall():
             users.append({
-                'user_id': row[0],
-                'username': row[1],
-                'first_name': row[2],
-                'last_name': row[3],
-                'email': row[4],
-                'phone_number': row[5],
-                'role_id': row[6],
-                'store_id': row[7],
-                'is_active': row[8],
-                'last_login_at': row[9],
-                'created_at': row[10],
-                'updated_at': row[11]
+                'user_id': row['user_id'],
+                'username': row['username'],
+                'first_name': row['first_name'],
+                'last_name': row['last_name'],
+                'email': row['email'],
+                'phone_number': row['phone_number'],
+                'role_id': row['role_id'],
+                'store_id': row['store_id'],
+                'is_active': row['is_active'],
+                'last_login_at': row['last_login_at'],
+                'created_at': row['created_at'],
+                'updated_at': row['updated_at']
             })
         return users
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 def get_user(user_id: int) -> Optional[Dict[str, Any]]:
     conn = get_db_connection()
@@ -235,23 +257,23 @@ def get_user(user_id: int) -> Optional[Dict[str, Any]]:
         row = cur.fetchone()
         if row:
             return {
-                'user_id': row[0],
-                'username': row[1],
-                'first_name': row[2],
-                'last_name': row[3],
-                'email': row[4],
-                'phone_number': row[5],
-                'role_id': row[6],
-                'store_id': row[7],
-                'is_active': row[8],
-                'last_login_at': row[9],
-                'created_at': row[10],
-                'updated_at': row[11]
+                'user_id': row['user_id'],
+                'username': row['username'],
+                'first_name': row['first_name'],
+                'last_name': row['last_name'],
+                'email': row['email'],
+                'phone_number': row['phone_number'],
+                'role_id': row['role_id'],
+                'store_id': row['store_id'],
+                'is_active': row['is_active'],
+                'last_login_at': row['last_login_at'],
+                'created_at': row['created_at'],
+                'updated_at': row['updated_at']
             }
         return None
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 # Inventory CRUD operations
 def get_inventory_with_details(
@@ -267,51 +289,51 @@ def get_inventory_with_details(
     try:
         query = """
             SELECT 
-                i.inventory_id,         -- 0
-                i.product_id,           -- 1
-                i.variant_id,           -- 2
-                i.store_id,             -- 3
-                i.current_stock,        -- 4
-                i.last_reorder_date,    -- 5
-                i.last_stock_take_date, -- 6
-                i.updated_at,           -- 7
+                i.inventory_id,
+                i.product_id,
+                i.variant_id,
+                i.store_id,
+                i.current_stock,
+                i.last_reorder_date,
+                i.last_stock_take_date,
+                i.updated_at,
                 -- Product details
-                p.product_code,         -- 8
-                p.product_name,         -- 9
-                p.description,          -- 10
-                p.category_id,          -- 11
-                p.brand_id,             -- 12
-                p.supplier_id,          -- 13
-                p.base_price,           -- 14
-                p.retail_price,         -- 15
-                p.tax_category_id,      -- 16
-                p.is_active as product_active, -- 17
-                p.barcode,              -- 18
-                p.unit_of_measure,      -- 19
-                p.weight,               -- 20
-                p.reorder_level,        -- 21
-                p.max_stock_level,      -- 22
-                p.created_at as product_created_at, -- 23
-                p.updated_at as product_updated_at, -- 24
+                p.product_code,
+                p.product_name,
+                p.description,
+                p.category_id,
+                p.brand_id,
+                p.supplier_id,
+                p.base_price,
+                p.retail_price,
+                p.tax_category_id,
+                p.is_active as product_active,
+                p.barcode,
+                p.unit_of_measure,
+                p.weight,
+                p.reorder_level,
+                p.max_stock_level,
+                p.created_at as product_created_at,
+                p.updated_at as product_updated_at,
                 -- Variant details
-                pv.size,                -- 25
-                pv.color,               -- 26
-                pv.sku_suffix,          -- 27
-                pv.barcode as variant_barcode, -- 28
-                pv.retail_price as variant_retail_price, -- 29
-                pv.base_price as variant_base_price, -- 30
-                pv.is_active as variant_active, -- 31
+                pv.size,
+                pv.color,
+                pv.sku_suffix,
+                pv.barcode as variant_barcode,
+                pv.retail_price as variant_retail_price,
+                pv.base_price as variant_base_price,
+                pv.is_active as variant_active,
                 -- Store details
-                s.store_name,           -- 32
-                s.address,              -- 33
-                s.phone_number,         -- 34
-                s.email,                -- 35
-                s.city,                 -- 36
-                s.province,             -- 37
-                s.postal_code,          -- 38
-                s.is_active as store_active, -- 39
-                s.created_at,           -- 40
-                s.updated_at            -- 41
+                s.store_name,
+                s.address,
+                s.phone_number,
+                s.email,
+                s.city,
+                s.province,
+                s.postal_code,
+                s.is_active as store_active,
+                s.created_at,
+                s.updated_at
             FROM inventory i
             JOIN products p ON i.product_id = p.product_id
             LEFT JOIN product_variants pv ON i.variant_id = pv.variant_id
@@ -344,68 +366,66 @@ def get_inventory_with_details(
         cur.execute(query, params)
         inventory_items = []
         for row in cur.fetchall():
-            if len(row) != 42:
-                print(f"[DEBUG] Inventory row length: {len(row)} (expected 42)")
             item = {
-                'inventory_id': row[0],
-                'product_id': row[1],
-                'variant_id': row[2],
-                'store_id': row[3],
-                'current_stock': row[4],
-                'last_reorder_date': row[5],
-                'last_stock_take_date': row[6],
-                'updated_at': row[7],
+                'inventory_id': row['inventory_id'],
+                'product_id': row['product_id'],
+                'variant_id': row['variant_id'],
+                'store_id': row['store_id'],
+                'current_stock': row['current_stock'],
+                'last_reorder_date': row['last_reorder_date'],
+                'last_stock_take_date': row['last_stock_take_date'],
+                'updated_at': row['updated_at'],
                 'product': {
-                    'product_id': row[1],
-                    'product_code': row[8],
-                    'product_name': row[9],
-                    'description': row[10],
-                    'category_id': row[11],
-                    'brand_id': row[12],
-                    'supplier_id': row[13],
-                    'base_price': float(row[14]) if row[14] else 0,
-                    'retail_price': float(row[15]) if row[15] else 0,
-                    'tax_category_id': row[16],
-                    'is_active': row[17],
-                    'barcode': row[18],
-                    'unit_of_measure': row[19],
-                    'weight': float(row[20]) if row[20] else None,
-                    'reorder_level': row[21],
-                    'max_stock_level': row[22],
-                    'created_at': row[23],
-                    'updated_at': row[24]
+                    'product_id': row['product_id'],
+                    'product_code': row['product_code'],
+                    'product_name': row['product_name'],
+                    'description': row['description'],
+                    'category_id': row['category_id'],
+                    'brand_id': row['brand_id'],
+                    'supplier_id': row['supplier_id'],
+                    'base_price': float(row['base_price']) if row['base_price'] else 0,
+                    'retail_price': float(row['retail_price']) if row['retail_price'] else 0,
+                    'tax_category_id': row['tax_category_id'],
+                    'is_active': row['product_active'],
+                    'barcode': row['barcode'],
+                    'unit_of_measure': row['unit_of_measure'],
+                    'weight': float(row['weight']) if row['weight'] else None,
+                    'reorder_level': row['reorder_level'],
+                    'max_stock_level': row['max_stock_level'],
+                    'created_at': row['product_created_at'],
+                    'updated_at': row['product_updated_at']
                 },
                 'variant': None,
                 'store': {
-                    'store_id': row[3],
-                    'store_name': row[32],
-                    'address': row[33],
-                    'phone_number': row[34],
-                    'email': row[35],
-                    'city': row[36],
-                    'province': row[37],
-                    'postal_code': row[38],
-                    'is_active': row[39],
-                    'created_at': row[40],
-                    'updated_at': row[41]
+                    'store_id': row['store_id'],
+                    'store_name': row['store_name'],
+                    'address': row['address'],
+                    'phone_number': row['phone_number'],
+                    'email': row['email'],
+                    'city': row['city'],
+                    'province': row['province'],
+                    'postal_code': row['postal_code'],
+                    'is_active': row['store_active'],
+                    'created_at': row['created_at'],
+                    'updated_at': row['updated_at']
                 }
             }
-            if row[2]:  # variant_id exists
+            if row['variant_id']:  # variant_id exists
                 item['variant'] = {
-                    'variant_id': row[2],
-                    'size': row[25],
-                    'color': row[26],
-                    'sku_suffix': row[27],
-                    'barcode': row[28],
-                    'retail_price': float(row[29]) if row[29] else None,
-                    'base_price': float(row[30]) if row[30] else None,
-                    'is_active': row[31]
+                    'variant_id': row['variant_id'],
+                    'size': row['size'],
+                    'color': row['color'],
+                    'sku_suffix': row['sku_suffix'],
+                    'barcode': row['variant_barcode'],
+                    'retail_price': float(row['variant_retail_price']) if row['variant_retail_price'] else None,
+                    'base_price': float(row['variant_base_price']) if row['variant_base_price'] else None,
+                    'is_active': row['variant_active']
                 }
             inventory_items.append(item)
         return inventory_items
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 def get_inventory_summary() -> Dict[str, int]:
     conn = get_db_connection()
@@ -413,36 +433,36 @@ def get_inventory_summary() -> Dict[str, int]:
     try:
         # Get total SKUs (unique product-variant combinations)
         cur.execute("""
-            SELECT COUNT(DISTINCT product_id || '-' || COALESCE(variant_id::text, 'base'))
+            SELECT COUNT(DISTINCT product_id || '-' || COALESCE(variant_id::text, 'base')) as total_skus
             FROM inventory
         """)
-        total_skus = (cur.fetchone() or [0])[0]
+        total_skus = (cur.fetchone() or {'total_skus': 0})['total_skus']
         
         # Get total stock
-        cur.execute("SELECT COALESCE(SUM(current_stock), 0) FROM inventory")
-        total_stock = (cur.fetchone() or [0])[0]
+        cur.execute("SELECT COALESCE(SUM(current_stock), 0) as total_stock FROM inventory")
+        total_stock = (cur.fetchone() or {'total_stock': 0})['total_stock']
         
         # Get low stock count
         cur.execute("""
-            SELECT COUNT(*)
+            SELECT COUNT(*) as low_stock_count
             FROM inventory i
             JOIN products p ON i.product_id = p.product_id
             WHERE i.current_stock <= p.reorder_level AND i.current_stock > 0
         """)
-        low_stock_count = (cur.fetchone() or [0])[0]
+        low_stock_count = (cur.fetchone() or {'low_stock_count': 0})['low_stock_count']
         
         # Get out of stock count
-        cur.execute("SELECT COUNT(*) FROM inventory WHERE current_stock = 0")
-        out_of_stock_count = (cur.fetchone() or [0])[0]
+        cur.execute("SELECT COUNT(*) as out_of_stock_count FROM inventory WHERE current_stock = 0")
+        out_of_stock_count = (cur.fetchone() or {'out_of_stock_count': 0})['out_of_stock_count']
         
         # Get over stock count
         cur.execute("""
-            SELECT COUNT(*)
+            SELECT COUNT(*) as over_stock_count
             FROM inventory i
             JOIN products p ON i.product_id = p.product_id
             WHERE i.current_stock > COALESCE(p.max_stock_level, 999999)
         """)
-        over_stock_count = (cur.fetchone() or [0])[0]
+        over_stock_count = (cur.fetchone() or {'over_stock_count': 0})['over_stock_count']
         
         return {
             'total_skus': total_skus,
@@ -453,7 +473,7 @@ def get_inventory_summary() -> Dict[str, int]:
         }
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 def update_inventory_stock(inventory_id: int, new_stock: int, user_id: int, reason: str) -> bool:
     conn = get_db_connection()
@@ -469,7 +489,10 @@ def update_inventory_stock(inventory_id: int, new_stock: int, user_id: int, reas
         if not row:
             return False
         
-        product_id, variant_id, store_id, current_stock = row
+        product_id = row['product_id']
+        variant_id = row['variant_id']
+        store_id = row['store_id']
+        current_stock = row['current_stock']
         stock_change = new_stock - current_stock
         
         # Update inventory
@@ -493,7 +516,7 @@ def update_inventory_stock(inventory_id: int, new_stock: int, user_id: int, reas
         raise e
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 def perform_stock_take(inventory_id: int, actual_count: int, user_id: int, notes: Optional[str] = None) -> bool:
     conn = get_db_connection()
@@ -509,7 +532,10 @@ def perform_stock_take(inventory_id: int, actual_count: int, user_id: int, notes
         if not row:
             return False
         
-        product_id, variant_id, store_id, current_stock = row
+        product_id = row['product_id']
+        variant_id = row['variant_id']
+        store_id = row['store_id']
+        current_stock = row['current_stock']
         stock_change = actual_count - current_stock
         
         # Update inventory
@@ -534,7 +560,7 @@ def perform_stock_take(inventory_id: int, actual_count: int, user_id: int, notes
         raise e
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 def transfer_stock(from_inventory_id: int, to_store_id: int, quantity: int, user_id: int, notes: Optional[str] = None) -> bool:
     conn = get_db_connection()
@@ -551,10 +577,10 @@ def transfer_stock(from_inventory_id: int, to_store_id: int, quantity: int, user
             return False
         
         # Ensure row is not None before unpacking
-        product_id = row[0]
-        variant_id = row[1]
-        from_store_id = row[2]
-        current_stock = row[3]
+        product_id = row['product_id']
+        variant_id = row['variant_id']
+        from_store_id = row['store_id']
+        current_stock = row['current_stock']
         
         if current_stock < quantity:
             return False
@@ -576,7 +602,8 @@ def transfer_stock(from_inventory_id: int, to_store_id: int, quantity: int, user
         
         if dest_row:
             # Update existing destination inventory
-            dest_inventory_id, dest_current_stock = dest_row
+            dest_inventory_id = dest_row['inventory_id']
+            dest_current_stock = dest_row['current_stock']
             cur.execute("""
                 UPDATE inventory 
                 SET current_stock = current_stock + %s, updated_at = CURRENT_TIMESTAMP
@@ -621,7 +648,7 @@ def transfer_stock(from_inventory_id: int, to_store_id: int, quantity: int, user
         raise e
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 def create_inventory(inventory: 'schemas.InventoryCreate') -> dict:
     conn = get_db_connection()
@@ -771,7 +798,7 @@ def create_inventory(inventory: 'schemas.InventoryCreate') -> dict:
         return result
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 def delete_inventory(inventory_id: int):
     conn = get_db_connection()
@@ -803,7 +830,7 @@ def delete_inventory(inventory_id: int):
         conn.commit()
     finally:
         cur.close()
-        conn.close()
+        return_db_connection(conn)
 
 # Inventory Movement CRUD operations
 def get_inventory_movements(
@@ -873,20 +900,20 @@ def get_inventory_movements(
         for row in cur.fetchall():
             dt = '1970-01-01T00:00:00Z'
             movement = {
-                'movement_id': row[0],
-                'product_id': row[1],
-                'variant_id': row[2],
-                'store_id': row[3],
-                'movement_type': row[4],
-                'quantity': row[5],
-                'reference_id': row[6],
-                'movement_date': row[7],
-                'user_id': row[8],
-                'notes': row[9],
+                'movement_id': row['movement_id'],
+                'product_id': row['product_id'],
+                'variant_id': row['variant_id'],
+                'store_id': row['store_id'],
+                'movement_type': row['movement_type'],
+                'quantity': row['quantity'],
+                'reference_id': row['reference_id'],
+                'movement_date': row['movement_date'],
+                'user_id': row['user_id'],
+                'notes': row['notes'],
                 'user': {
-                    'user_id': row[8],
-                    'first_name': row[10],
-                    'last_name': row[11],
+                    'user_id': row['user_id'],
+                    'first_name': row['first_name'],
+                    'last_name': row['last_name'],
                     'username': '',
                     'email': '',
                     'role_id': 0,
@@ -894,9 +921,9 @@ def get_inventory_movements(
                     'updated_at': dt
                 },
                 'product': {
-                    'product_id': row[1],
-                    'product_name': row[12],
-                    'product_code': row[13],
+                    'product_id': row['product_id'],
+                    'product_name': row['product_name'],
+                    'product_code': row['product_code'],
                     'base_price': 0,
                     'retail_price': 0,
                     'created_at': dt,
@@ -904,8 +931,8 @@ def get_inventory_movements(
                 },
                 'variant': None,
                 'store': {
-                    'store_id': row[3],
-                    'store_name': row[16],
+                    'store_id': row['store_id'],
+                    'store_name': row['store_name'],
                     'address': '',
                     'phone_number': '',
                     'email': '',
@@ -917,14 +944,88 @@ def get_inventory_movements(
                     'updated_at': dt
                 }
             }
-            if row[2]:  # variant_id exists
+            if row['variant_id']:  # variant_id exists
                 movement['variant'] = {
-                    'variant_id': row[2],
-                    'size': row[14],
-                    'color': row[15]
+                    'variant_id': row['variant_id'],
+                    'size': row['size'],
+                    'color': row['color']
                 }
             movements.append(movement)
         return movements
     finally:
         cur.close()
-        conn.close() 
+        return_db_connection(conn) 
+
+# ============================================================================
+# BULK DATA OPTIMIZATION
+# ============================================================================
+
+def get_all_inventory_data(
+    store_id: Optional[int] = None,
+    category_id: Optional[int] = None,
+    brand_id: Optional[int] = None,
+    search: Optional[str] = None,
+    low_stock_only: bool = False,
+    out_of_stock_only: bool = False
+) -> Dict[str, Any]:
+    """Get all inventory data in a single optimized query for faster loading."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # Get inventory with details
+        inventory_items = get_inventory_with_details(
+            store_id=store_id,
+            category_id=category_id,
+            brand_id=brand_id,
+            search=search,
+            low_stock_only=low_stock_only,
+            out_of_stock_only=out_of_stock_only
+        )
+        
+        # Get stores
+        stores = get_stores()
+        
+        # Get products (from product API)
+        cur.execute("""
+            SELECT p.*, c.category_name, b.brand_name
+            FROM products p
+            LEFT JOIN categories c ON p.category_id = c.category_id
+            LEFT JOIN brands b ON p.brand_id = b.brand_id
+            ORDER BY p.product_name
+        """)
+        products = [dict(row) for row in cur.fetchall()]
+        
+        # Get categories
+        cur.execute("""
+            SELECT * FROM categories 
+            ORDER BY category_name
+        """)
+        categories = [dict(row) for row in cur.fetchall()]
+        
+        # Get brands
+        cur.execute("""
+            SELECT * FROM brands 
+            ORDER BY brand_name
+        """)
+        brands = [dict(row) for row in cur.fetchall()]
+        
+        # Get users
+        users = get_users()
+        
+        # Get summary
+        summary = get_inventory_summary()
+        
+        return {
+            "inventory": inventory_items,
+            "stores": stores,
+            "products": products,
+            "categories": categories,
+            "brands": brands,
+            "users": users,
+            "summary": summary
+        }
+    except Exception as e:
+        raise e
+    finally:
+        cur.close()
+        return_db_connection(conn) 

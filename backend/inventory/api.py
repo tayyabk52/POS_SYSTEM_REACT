@@ -196,4 +196,30 @@ def delete_inventory(inventory_id: int):
         crud.delete_inventory(inventory_id)
         return {"message": "Inventory record and related logs deleted successfully"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete inventory: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Failed to delete inventory: {str(e)}")
+
+# ============================================================================
+# BULK DATA OPTIMIZATION
+# ============================================================================
+
+@router.get("/bulk-data")
+def get_all_inventory_data(
+    store_id: Optional[int] = Query(None, description="Filter by store ID"),
+    category_id: Optional[int] = Query(None, description="Filter by category ID"),
+    brand_id: Optional[int] = Query(None, description="Filter by brand ID"),
+    search: Optional[str] = Query(None, description="Search by product name, code, or variant"),
+    low_stock_only: bool = Query(False, description="Show only low stock items"),
+    out_of_stock_only: bool = Query(False, description="Show only out of stock items")
+):
+    """Get all inventory data in a single optimized call for faster loading"""
+    try:
+        return crud.get_all_inventory_data(
+            store_id=store_id,
+            category_id=category_id,
+            brand_id=brand_id,
+            search=search,
+            low_stock_only=low_stock_only,
+            out_of_stock_only=out_of_stock_only
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch bulk data: {str(e)}") 

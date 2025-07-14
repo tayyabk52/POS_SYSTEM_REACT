@@ -144,29 +144,90 @@ function InventoryPage() {
     setLoading(true);
     setError(null);
     try {
-      // Pass store_id as a param if storeFilter is set
-      const inventoryParams = storeFilter ? { params: { store_id: storeFilter } } : {};
-      const [inventoryRes, storesRes, productsRes, categoriesRes, brandsRes, usersRes, summaryRes] = await Promise.all([
-        axios.get(`${API_BASE}/inventory/`, inventoryParams),
-        axios.get(`${API_BASE}/inventory/stores`),
-        axios.get(`${API_BASE}/products`),
-        axios.get(`${API_BASE}/categories`),
-        axios.get(`${API_BASE}/brands`),
-        axios.get(`${API_BASE}/inventory/users`),
-        axios.get(`${API_BASE}/inventory/summary`)
-      ]);
-      setInventoryData(inventoryRes.data);
-      setStores(storesRes.data);
-      setProducts(productsRes.data);
-      setCategories(categoriesRes.data);
-      setBrands(brandsRes.data);
-      setUsers(usersRes.data);
-      setSummary(summaryRes.data);
+      // Use the new bulk data endpoint for optimized loading
+      const params = {};
+      if (storeFilter) params.store_id = storeFilter;
+      
+      const response = await axios.get(`${API_BASE}/inventory/bulk-data`, { params });
+      const data = response.data;
+      
+      setInventoryData(data.inventory || []);
+      setStores(data.stores || []);
+      setProducts(data.products || []);
+      setCategories(data.categories || []);
+      setBrands(data.brands || []);
+      setUsers(data.users || []);
+      setSummary(data.summary || { total_skus: 0, total_stock: 0, low_stock_count: 0, out_of_stock_count: 0 });
     } catch (err) {
       setError('Failed to load data.');
       console.error('Error fetching data:', err);
     }
     setLoading(false);
+  }
+
+  // Individual fetch functions for specific updates (keeping for compatibility)
+  async function fetchInventoryData() {
+    try {
+      const inventoryParams = storeFilter ? { params: { store_id: storeFilter } } : {};
+      const response = await axios.get(`${API_BASE}/inventory/`, inventoryParams);
+      setInventoryData(response.data);
+    } catch (err) {
+      console.error('Error fetching inventory:', err);
+    }
+  }
+
+  async function fetchStores() {
+    try {
+      const response = await axios.get(`${API_BASE}/inventory/stores`);
+      setStores(response.data);
+    } catch (err) {
+      console.error('Error fetching stores:', err);
+    }
+  }
+
+  async function fetchProducts() {
+    try {
+      const response = await axios.get(`${API_BASE}/products`);
+      setProducts(response.data);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+    }
+  }
+
+  async function fetchCategories() {
+    try {
+      const response = await axios.get(`${API_BASE}/categories`);
+      setCategories(response.data);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
+  }
+
+  async function fetchBrands() {
+    try {
+      const response = await axios.get(`${API_BASE}/brands`);
+      setBrands(response.data);
+    } catch (err) {
+      console.error('Error fetching brands:', err);
+    }
+  }
+
+  async function fetchUsers() {
+    try {
+      const response = await axios.get(`${API_BASE}/inventory/users`);
+      setUsers(response.data);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    }
+  }
+
+  async function fetchSummary() {
+    try {
+      const response = await axios.get(`${API_BASE}/inventory/summary`);
+      setSummary(response.data);
+    } catch (err) {
+      console.error('Error fetching summary:', err);
+    }
   }
 
   // Remove JS store filtering from filtered data
@@ -371,6 +432,7 @@ function InventoryPage() {
                     try {
                       await axios.delete(`${API_BASE}/inventory/${record.inventory_id}`);
                       message.success('Inventory record deleted');
+                      // Use optimized refresh
                       fetchAllData();
                     } catch (err) {
                       message.error('Failed to delete inventory record');
@@ -393,6 +455,7 @@ function InventoryPage() {
       const response = await axios.post(`${API_BASE}/inventory/`, values);
       console.log('[InventoryPage] Inventory added successfully:', response.data);
       setInventoryDrawerOpen(false);
+      // Use optimized refresh
       fetchAllData();
       setAdding(false);
       message.success('Inventory record added');
@@ -687,7 +750,8 @@ function InventoryPage() {
             });
             message.success('Stock adjusted successfully');
             setAdjustModal({ open: false, record: null, value: 0, reason: '' });
-            fetchAllData(); // Refresh data
+            // Use optimized refresh
+            fetchAllData();
           } catch (err) {
             message.error('Failed to adjust stock');
           }
@@ -751,7 +815,8 @@ function InventoryPage() {
             });
             message.success('Stock take completed');
             setStockTakeModal({ open: false, record: null, value: 0, notes: '' });
-            fetchAllData(); // Refresh data
+            // Use optimized refresh
+            fetchAllData();
           } catch (err) {
             message.error('Failed to complete stock take');
           }
@@ -825,7 +890,8 @@ function InventoryPage() {
             );
             message.success('Stock transfer initiated');
             setTransferModal({ open: false, record: null, fromStore: null, toStore: null, quantity: 0, notes: '', error: '' });
-            fetchAllData(); // Refresh data
+            // Use optimized refresh
+            fetchAllData();
           } catch (err) {
             setTransferModal(a => ({ ...a, error: 'Failed to transfer stock. Please try again.' }));
           }

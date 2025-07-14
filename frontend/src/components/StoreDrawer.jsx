@@ -40,7 +40,14 @@ function StoreDrawer({
       open={open}
       onClose={onClose}
       closeIcon={<CloseOutlined style={{ fontSize: 22 }} />}
-      bodyStyle={{ padding: screens.xs ? 16 : 32, background: theme.cardBg, borderRadius: theme.borderRadius, boxShadow: theme.cardShadow }}
+      styles={{
+        body: {
+          padding: screens.xs ? 16 : 32,
+          background: theme.cardBg,
+          borderRadius: theme.borderRadius,
+          boxShadow: theme.cardShadow
+        }
+      }}
       footer={
         <div style={{ textAlign: 'right', padding: 16, background: 'transparent' }}>
           <Button onClick={onClose} style={{ marginRight: 12 }}>Cancel</Button>
