@@ -21,8 +21,7 @@ from . import schemas
 # Load environment variables
 load_dotenv()
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging - use logger without reconfiguring root logger
 logger = logging.getLogger(__name__)
 
 # Database connection config
@@ -740,7 +739,7 @@ def delete_role(role_id: int) -> bool:
         
         success = bool(deleted)
         if success:
-                logger.info(f"Successfully deleted role {role_id}")
+            logger.info(f"Successfully deleted role {role_id}")
         else:
             logger.warning(f"Role {role_id} not found for deletion")
         
@@ -1082,16 +1081,22 @@ def bulk_remove_permissions_from_role(
 # ============================================================================
 
 def create_setting(setting: 'schemas.SettingCreate') -> Dict[str, Any]:
-    """Create a new system setting."""
+    """Create a new system setting or update existing one."""
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        logger.info(f"Creating setting: {setting.setting_key}")
+        logger.info(f"Creating/updating setting: {setting.setting_key}")
         
+        # Use ON CONFLICT to handle duplicate setting keys
         cur.execute("""
             INSERT INTO settings (
                 setting_key, setting_value, store_id
             ) VALUES (%s, %s, %s)
+            ON CONFLICT (setting_key) 
+            DO UPDATE SET 
+                setting_value = EXCLUDED.setting_value,
+                store_id = EXCLUDED.store_id,
+                updated_at = CURRENT_TIMESTAMP
             RETURNING *
         """, (
             setting.setting_key,
@@ -1102,7 +1107,7 @@ def create_setting(setting: 'schemas.SettingCreate') -> Dict[str, Any]:
         new_setting = cur.fetchone()
         conn.commit()
         
-        logger.info(f"Successfully created setting with ID: {new_setting['setting_id']}")
+        logger.info(f"Successfully created/updated setting with ID: {new_setting['setting_id']}")
         return dict(new_setting)
     except Exception as e:
         conn.rollback()

@@ -30,6 +30,7 @@ import {
 } from "@ant-design/icons";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { theme } from "./theme";
+import { useSettings } from "./contexts/SettingsContext";
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -152,10 +153,14 @@ function MainLayout({ user, onLogout, children, inventoryAlerts = [] }) {
   const location = useLocation();
   const navigate = useNavigate();
   const screens = useBreakpoint();
+  const { getSetting } = useSettings();
 
   const [openKeys, setOpenKeys] = useState([]);
   const [selectedKeys, setSelectedKeys] = useState([location.pathname]);
   const [collapsed, setCollapsed] = useState(false);
+
+  // Get business name from settings, fallback to "POS" if not set
+  const businessName = getSetting('store_name', 'POS');
 
   useEffect(() => {
     setSelectedKeys([location.pathname]);
@@ -242,7 +247,7 @@ function MainLayout({ user, onLogout, children, inventoryAlerts = [] }) {
               {user.first_name[0]}
             </Avatar>
           ) : (
-            <span style={{ letterSpacing: 2 }}>POS</span>
+            <span style={{ letterSpacing: 2 }}>{businessName}</span>
           )}
         </div>
 

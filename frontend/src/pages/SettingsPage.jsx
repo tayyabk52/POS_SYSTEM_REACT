@@ -50,6 +50,7 @@ import { theme } from '../theme';
 import { SearchBar, StatusTag, Card as CustomCard } from '../components';
 import StoreDrawer from '../components/StoreDrawer';
 import dayjs from 'dayjs';
+import { useSettings } from '../contexts/SettingsContext';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
@@ -61,6 +62,7 @@ function SettingsPage() {
   const [activeTab, setActiveTab] = useState('tax');
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const { refreshSettings } = useSettings();
   
   // State for different sections
   const [taxCategories, setTaxCategories] = useState([]);
@@ -603,7 +605,7 @@ function SettingsPage() {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to delete tax category');
-      message.success('Tax category deleted');
+    message.success('Tax category deleted');
       // Use optimized refresh
       fetchAllSettingsData();
     } catch (error) {
@@ -632,8 +634,8 @@ function SettingsPage() {
       if (!response.ok) throw new Error('Failed to save tax category');
       
       message.success(`Tax category ${taxModal.editing ? 'updated' : 'added'}`);
-      setTaxModal({ open: false, editing: null });
-      taxForm.resetFields();
+    setTaxModal({ open: false, editing: null });
+    taxForm.resetFields();
       // Use optimized refresh
       fetchAllSettingsData();
     } catch (error) {
@@ -657,7 +659,7 @@ function SettingsPage() {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to delete payment method');
-      message.success('Payment method deleted');
+    message.success('Payment method deleted');
       // Use optimized refresh
       fetchAllSettingsData();
     } catch (error) {
@@ -681,8 +683,8 @@ function SettingsPage() {
       if (!response.ok) throw new Error('Failed to save payment method');
       
       message.success(`Payment method ${paymentModal.editing ? 'updated' : 'added'}`);
-      setPaymentModal({ open: false, editing: null });
-      paymentForm.resetFields();
+    setPaymentModal({ open: false, editing: null });
+    paymentForm.resetFields();
       // Use optimized refresh
       fetchAllSettingsData();
     } catch (error) {
@@ -705,7 +707,7 @@ function SettingsPage() {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to delete expense category');
-      message.success('Expense category deleted');
+    message.success('Expense category deleted');
       // Use optimized refresh
       fetchAllSettingsData();
     } catch (error) {
@@ -729,8 +731,8 @@ function SettingsPage() {
       if (!response.ok) throw new Error('Failed to save expense category');
       
       message.success(`Expense category ${expenseModal.editing ? 'updated' : 'added'}`);
-      setExpenseModal({ open: false, editing: null });
-      expenseForm.resetFields();
+    setExpenseModal({ open: false, editing: null });
+    expenseForm.resetFields();
       // Use optimized refresh
       fetchAllSettingsData();
     } catch (error) {
@@ -754,7 +756,7 @@ function SettingsPage() {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to delete role');
-      message.success('Role deleted');
+    message.success('Role deleted');
       // Use optimized refresh
       fetchAllSettingsData();
     } catch (error) {
@@ -778,8 +780,8 @@ function SettingsPage() {
       if (!response.ok) throw new Error('Failed to save role');
       
       message.success(`Role ${roleModal.editing ? 'updated' : 'added'}`);
-      setRoleModal({ open: false, editing: null });
-      roleForm.resetFields();
+    setRoleModal({ open: false, editing: null });
+    roleForm.resetFields();
       // Use optimized refresh
       fetchAllSettingsData();
     } catch (error) {
@@ -817,6 +819,8 @@ function SettingsPage() {
       settingForm.resetFields();
       // Use optimized refresh
       fetchAllSettingsData();
+      // Refresh global settings context
+      refreshSettings();
     } catch (error) {
       message.error('Failed to save setting');
       console.error(error);
@@ -890,7 +894,7 @@ function SettingsPage() {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to delete POS terminal');
-      message.success('POS terminal deleted');
+    message.success('POS terminal deleted');
       // Use optimized refresh
       fetchAllSettingsData();
     } catch (error) {
@@ -914,8 +918,8 @@ function SettingsPage() {
       if (!response.ok) throw new Error('Failed to save POS terminal');
       
       message.success(`POS terminal ${posTerminalModal.editing ? 'updated' : 'added'}`);
-      setPosTerminalModal({ open: false, editing: null });
-      posTerminalForm.resetFields();
+    setPosTerminalModal({ open: false, editing: null });
+    posTerminalForm.resetFields();
       // Use optimized refresh
       fetchAllSettingsData();
     } catch (error) {
@@ -936,7 +940,7 @@ function SettingsPage() {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to remove permission from role');
-      message.success('Permission removed from role');
+    message.success('Permission removed from role');
       // Use optimized refresh
       fetchAllSettingsData();
     } catch (error) {
@@ -955,7 +959,7 @@ function SettingsPage() {
         for (const rp of rolePerms) {
           await handleRemoveRolePermission(roleId, rp.permission_id);
         }
-        message.success(`All permissions removed from ${roleName} role`);
+      message.success(`All permissions removed from ${roleName} role`);
       } catch (error) {
         message.error('Failed to remove all permissions');
         console.error(error);
@@ -1038,7 +1042,10 @@ function SettingsPage() {
     try {
       setLoading(true);
       const template = settingTemplates.find(t => t.key === quickAddModal.template);
-      if (!template) return;
+      if (!template) {
+        message.error('Template not found');
+        return;
+      }
 
       // Create all settings from the template
       const settingsToCreate = template.settings.map(setting => ({
@@ -1047,23 +1054,51 @@ function SettingsPage() {
         store_id: values.store_id || null
       }));
 
-      for (const setting of settingsToCreate) {
-        const response = await fetch(`${API_BASE_URL}/settings`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(setting)
-        });
+      let successCount = 0;
+      let failedSettings = [];
 
-        if (!response.ok) throw new Error(`Failed to create setting: ${setting.setting_key}`);
+      for (const setting of settingsToCreate) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/system`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(setting)
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+            throw new Error(errorData.detail || `Failed to create setting: ${setting.setting_key}`);
+          }
+
+          successCount++;
+        } catch (settingError) {
+          console.error(`Failed to create setting ${setting.setting_key}:`, settingError);
+          failedSettings.push({
+            key: setting.setting_key,
+            error: settingError.message
+          });
+        }
       }
 
-      message.success(`${template.label} settings added successfully`);
+      // Show appropriate success/error messages
+      if (successCount === settingsToCreate.length) {
+        message.success(`${template.label} settings added successfully (${successCount} settings)`);
+      } else if (successCount > 0) {
+        message.warning(`Partially successful: ${successCount} settings added, ${failedSettings.length} failed`);
+        console.warn('Failed settings:', failedSettings);
+      } else {
+        message.error(`Failed to add any settings from ${template.label}`);
+        console.error('All settings failed:', failedSettings);
+      }
+
       // Use optimized refresh
       fetchAllSettingsData();
+      // Refresh global settings context
+      refreshSettings();
       setQuickAddModal({ open: false, template: null });
     } catch (error) {
-      message.error('Failed to add settings');
-      console.error(error);
+      message.error(`Failed to add settings: ${error.message}`);
+      console.error('Quick Add Settings error:', error);
     } finally {
       setLoading(false);
     }

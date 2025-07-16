@@ -14,6 +14,7 @@ import ExpensesPage from './pages/ExpensesPage';
 import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
 import SettingsPage from './pages/SettingsPage';
+import { SettingsProvider } from './contexts/SettingsContext';
 
 function RouteLogger() {
   const location = useLocation();
@@ -43,27 +44,29 @@ function App() {
   }
 
   return (
-    <Router>
-      <RouteLogger />
-      <MainLayout user={user} onLogout={() => setUser(null)}>
-        <Routes>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/sales" element={<SalesPage />} />
-          <Route path="/products" element={<ProductsPage />} />
-          <Route path="/inventory" element={<InventoryPage />} />
-          <Route path="/customers" element={<CustomersPage />} />
-          <Route path="/suppliers" element={<SuppliersPage />} />
-          <Route path="/purchases" element={<PurchasesPage />} />
-          <Route path="/returns" element={<ReturnsPage />} />
-          <Route path="/expenses" element={<ExpensesPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/users" element={<UsersPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-          <Route path="*" element={<Navigate to="/dashboard" />} />
-        </Routes>
-      </MainLayout>
-    </Router>
+    <SettingsProvider>
+      <Router>
+        <RouteLogger />
+        <MainLayout user={user} onLogout={() => setUser(null)}>
+          <Routes>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/sales" element={<SalesPage />} />
+            <Route path="/products" element={<ProductsPage />} />
+            <Route path="/inventory" element={<InventoryPage />} />
+            <Route path="/customers" element={<CustomersPage />} />
+            <Route path="/suppliers" element={<SuppliersPage />} />
+            <Route path="/purchases" element={<PurchasesPage />} />
+            <Route path="/returns" element={<ReturnsPage />} />
+            <Route path="/expenses" element={<ExpensesPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/users" element={<UsersPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/" element={<Navigate to="/dashboard" />} />
+            <Route path="*" element={<Navigate to="/dashboard" />} />
+          </Routes>
+        </MainLayout>
+      </Router>
+    </SettingsProvider>
   );
 }
 
