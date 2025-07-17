@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, DECIMAL
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, DECIMAL, ForeignKey
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from backend.database import Base
 
 class Customer(Base):
@@ -26,7 +27,7 @@ class LoyaltyPointsHistory(Base):
     __tablename__ = "loyalty_points_history"
 
     history_id = Column(Integer, primary_key=True, index=True)
-    customer_id = Column(Integer, nullable=False)
+    customer_id = Column(Integer, ForeignKey("customers.customer_id"), nullable=False)
     sale_id = Column(Integer)
     points_change = Column(Integer, nullable=False)
     change_date = Column(DateTime(timezone=True), server_default=func.now())

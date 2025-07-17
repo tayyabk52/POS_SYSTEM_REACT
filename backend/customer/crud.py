@@ -3,7 +3,7 @@ from sqlalchemy import and_, or_, func
 from typing import List, Optional
 from . import models, schemas
 
-def get_customers(db: Session, skip: int = 0, limit: int = 100, search: str = None, is_active: bool = None):
+def get_customers(db: Session, skip: int = 0, limit: int = 100, search: Optional[str] = None, is_active: Optional[bool] = None):
     query = db.query(models.Customer)
     
     if search:
@@ -79,7 +79,7 @@ def add_loyalty_points(db: Session, customer_id: int, points_change: int, sale_i
     # Update customer's total points
     db_customer = get_customer(db, customer_id)
     if db_customer:
-        db_customer.total_loyalty_points += points_change
+        db_customer.total_loyalty_points = db_customer.total_loyalty_points + points_change
         
         # Create history record
         history_record = models.LoyaltyPointsHistory(

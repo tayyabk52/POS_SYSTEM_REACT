@@ -24,6 +24,9 @@ app.include_router(inventory_router)
 from backend.settings.api import router as settings_router
 app.include_router(settings_router)
 
+from backend.customer.api import router as customer_router
+app.include_router(customer_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # For development only! Restrict in production.
