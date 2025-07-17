@@ -2,13 +2,14 @@ from fastapi import APIRouter, HTTPException, Body
 from backend.database import engine
 from sqlalchemy import text
 
-router = APIRouter(tags=["dropdowns"])
+router = APIRouter(prefix="/dropdown", tags=["dropdown"])
 
 @router.get("/categories")
 def get_categories():
+    """Get all categories for dropdown"""
     with engine.connect() as conn:
-        result = conn.execute(text("SELECT category_id, category_name FROM categories ORDER BY category_name"))
-        return list(result.mappings())
+        result = conn.execute(text("SELECT category_id, category_name FROM categories WHERE is_active = TRUE ORDER BY category_name"))
+        return [{"category_id": row[0], "category_name": row[1]} for row in result]
 
 @router.post("/categories")
 def add_category(category_name: str = Body(..., embed=True)):
@@ -55,18 +56,21 @@ def add_brand(brand_name: str = Body(..., embed=True)):
 
 @router.get("/brands")
 def get_brands():
+    """Get all brands for dropdown"""
     with engine.connect() as conn:
-        result = conn.execute(text("SELECT brand_id, brand_name FROM brands ORDER BY brand_name"))
-        return list(result.mappings())
+        result = conn.execute(text("SELECT brand_id, brand_name FROM brands WHERE is_active = TRUE ORDER BY brand_name"))
+        return [{"brand_id": row[0], "brand_name": row[1]} for row in result]
 
 @router.get("/suppliers")
 def get_suppliers():
+    """Get all suppliers for dropdown"""
     with engine.connect() as conn:
-        result = conn.execute(text("SELECT supplier_id, supplier_name FROM suppliers WHERE is_active=TRUE ORDER BY supplier_name"))
-        return list(result.mappings())
+        result = conn.execute(text("SELECT supplier_id, supplier_name FROM suppliers WHERE is_active = TRUE ORDER BY supplier_name"))
+        return [{"supplier_id": row[0], "supplier_name": row[1]} for row in result]
 
 @router.get("/tax-categories")
 def get_tax_categories():
+    """Get all tax categories for dropdown"""
     with engine.connect() as conn:
-        result = conn.execute(text("SELECT tax_category_id, tax_category_name, tax_rate FROM tax_categories WHERE is_active=TRUE ORDER BY tax_category_name"))
-        return list(result.mappings()) 
+        result = conn.execute(text("SELECT tax_category_id, tax_category_name FROM tax_categories WHERE is_active = TRUE ORDER BY tax_category_name"))
+        return [{"tax_category_id": row[0], "tax_category_name": row[1]} for row in result] 
