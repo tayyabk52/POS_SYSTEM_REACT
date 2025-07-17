@@ -8,7 +8,7 @@ router = APIRouter(prefix="/dropdown", tags=["dropdown"])
 def get_categories():
     """Get all categories for dropdown"""
     with engine.connect() as conn:
-        result = conn.execute(text("SELECT category_id, category_name FROM categories WHERE is_active = TRUE ORDER BY category_name"))
+        result = conn.execute(text("SELECT category_id, category_name FROM categories ORDER BY category_name"))
         return [{"category_id": row[0], "category_name": row[1]} for row in result]
 
 @router.post("/categories")
@@ -58,7 +58,7 @@ def add_brand(brand_name: str = Body(..., embed=True)):
 def get_brands():
     """Get all brands for dropdown"""
     with engine.connect() as conn:
-        result = conn.execute(text("SELECT brand_id, brand_name FROM brands WHERE is_active = TRUE ORDER BY brand_name"))
+        result = conn.execute(text("SELECT brand_id, brand_name FROM brands ORDER BY brand_name"))
         return [{"brand_id": row[0], "brand_name": row[1]} for row in result]
 
 @router.get("/suppliers")
