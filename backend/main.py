@@ -27,12 +27,14 @@ app.include_router(settings_router)
 from backend.customer.api import router as customer_router
 app.include_router(customer_router)
 
-
 from backend.sales.api import router as sales_router
 app.include_router(sales_router)
 
 from backend.returns.api import router as returns_router
 app.include_router(returns_router)
+
+from backend.suppliers.api import router as suppliers_router
+app.include_router(suppliers_router)
 
 app.add_middleware(
     CORSMiddleware,

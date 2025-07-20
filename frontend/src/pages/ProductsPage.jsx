@@ -44,10 +44,10 @@ function ProductsPage() {
       try {
         const [prodRes, catRes, brandRes, suppRes, taxRes] = await Promise.all([
           axios.get(`${API_BASE}/products/`),
-          axios.get(`${API_BASE}/categories`),
-          axios.get(`${API_BASE}/brands`),
-          axios.get(`${API_BASE}/suppliers`),
-          axios.get(`${API_BASE}/tax-categories`),
+          axios.get(`${API_BASE}/dropdown/categories`),
+          axios.get(`${API_BASE}/dropdown/brands`),
+          axios.get(`${API_BASE}/dropdown/suppliers`),
+          axios.get(`${API_BASE}/settings/tax-categories`),
         ]);
         setProducts(prodRes.data);
         setCategories(catRes.data);
@@ -278,7 +278,7 @@ function ProductsPage() {
     }
     setAddingCategory(true);
     try {
-      const res = await axios.post(`${API_BASE}/categories`, { category_name: newCategoryName });
+      const res = await axios.post(`${API_BASE}/dropdown/categories`, { category_name: newCategoryName });
       setCategories([...categories, res.data]);
       setNewCategoryName('');
       setCategoryModalOpen(false);
@@ -300,7 +300,7 @@ function ProductsPage() {
     }
     setAddingBrand(true);
     try {
-      const res = await axios.post(`${API_BASE}/brands`, { brand_name: newBrandName });
+      const res = await axios.post(`${API_BASE}/dropdown/brands`, { brand_name: newBrandName });
       setBrands([...brands, res.data]);
       setNewBrandName('');
       setBrandModalOpen(false);
@@ -320,10 +320,10 @@ function ProductsPage() {
     setError(null);
     Promise.all([
       axios.get(`${API_BASE}/products/`),
-      axios.get(`${API_BASE}/categories`),
-      axios.get(`${API_BASE}/brands`),
-      axios.get(`${API_BASE}/suppliers`),
-      axios.get(`${API_BASE}/tax-categories`),
+      axios.get(`${API_BASE}/dropdown/categories`),
+      axios.get(`${API_BASE}/dropdown/brands`),
+      axios.get(`${API_BASE}/dropdown/suppliers`),
+      axios.get(`${API_BASE}/settings/tax-categories`),
     ]).then(([prodRes, catRes, brandRes, suppRes, taxRes]) => {
       setProducts(prodRes.data);
       setCategories(catRes.data);

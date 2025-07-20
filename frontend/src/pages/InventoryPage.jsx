@@ -196,7 +196,7 @@ function InventoryPage() {
 
   async function fetchCategories() {
     try {
-      const response = await axios.get(`${API_BASE}/categories`);
+      const response = await axios.get(`${API_BASE}/dropdown/categories`);
       setCategories(response.data);
     } catch (err) {
       console.error('Error fetching categories:', err);
@@ -205,7 +205,7 @@ function InventoryPage() {
 
   async function fetchBrands() {
     try {
-      const response = await axios.get(`${API_BASE}/brands`);
+      const response = await axios.get(`${API_BASE}/dropdown/brands`);
       setBrands(response.data);
     } catch (err) {
       console.error('Error fetching brands:', err);
