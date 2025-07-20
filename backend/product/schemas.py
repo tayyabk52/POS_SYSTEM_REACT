@@ -12,7 +12,7 @@ class ProductVariantBase(BaseModel):
     is_active: Optional[bool] = True
 
 class ProductVariantCreate(ProductVariantBase):
-    variant_id: Optional[int] = None
+    pass
 
 class ProductVariant(ProductVariantBase):
     variant_id: int
@@ -20,7 +20,7 @@ class ProductVariant(ProductVariantBase):
     updated_at: Optional[datetime]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ProductBase(BaseModel):
     product_code: str
@@ -40,10 +40,24 @@ class ProductBase(BaseModel):
     max_stock_level: Optional[int] = None
 
 class ProductCreate(ProductBase):
-    variants: Optional[List[ProductVariantCreate]] = []
+    pass
 
-class ProductUpdate(ProductBase):
-    variants: Optional[List[ProductVariantCreate]] = []
+class ProductUpdate(BaseModel):
+    product_code: Optional[str] = None
+    product_name: Optional[str] = None
+    description: Optional[str] = None
+    category_id: Optional[int] = None
+    brand_id: Optional[int] = None
+    supplier_id: Optional[int] = None
+    base_price: Optional[float] = None
+    retail_price: Optional[float] = None
+    tax_category_id: Optional[int] = None
+    is_active: Optional[bool] = None
+    barcode: Optional[str] = None
+    unit_of_measure: Optional[str] = None
+    weight: Optional[float] = None
+    reorder_level: Optional[int] = None
+    max_stock_level: Optional[int] = None
 
 class Product(ProductBase):
     product_id: int
@@ -52,4 +66,4 @@ class Product(ProductBase):
     variants: List[ProductVariant] = []
 
     class Config:
-        orm_mode = True 
+        from_attributes = True 
