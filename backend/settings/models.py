@@ -16,7 +16,7 @@ class TaxCategory(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    products = relationship("Product", back_populates="tax_category")
+    # products = relationship("Product", back_populates="tax_category")
 
 
 class PaymentMethod(Base):
@@ -29,8 +29,8 @@ class PaymentMethod(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    payments = relationship("Payment", back_populates="payment_method")
-    returns = relationship("Return", back_populates="refund_method")
+    # payments = relationship("Payment", back_populates="payment_method")
+    # returns = relationship("Return", back_populates="refund_method")
 
 
 class ExpenseCategory(Base):
@@ -42,7 +42,7 @@ class ExpenseCategory(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    expenses = relationship("Expense", back_populates="expense_category")
+    # expenses = relationship("Expense", back_populates="expense_category")
 
 
 class Role(Base):
@@ -55,7 +55,7 @@ class Role(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    users = relationship("User", back_populates="role")
+    # users = relationship("User", back_populates="role")
     role_permissions = relationship("RolePermission", back_populates="role", cascade="all, delete-orphan")
 
 
@@ -94,7 +94,7 @@ class Setting(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    store = relationship("Store", back_populates="settings")
+    # store = relationship("Store", back_populates="settings")
 
 
 class POSTerminal(Base):
@@ -112,8 +112,7 @@ class POSTerminal(Base):
     __table_args__ = (UniqueConstraint('store_id', 'terminal_name', name='unique_store_terminal'),)
     
     # Relationships
-    store = relationship("Store", back_populates="pos_terminals")
-    sales_transactions = relationship("SalesTransaction", back_populates="pos_terminal")
+    # store = relationship("Store", back_populates="pos_terminals")
 
 
 class AuditLog(Base):
@@ -127,23 +126,8 @@ class AuditLog(Base):
     ip_address = Column(String(50))
     
     # Relationships
-    user = relationship("User", back_populates="audit_logs")
+    # user = relationship("User", back_populates="audit_logs")
 
 
-# Import and extend existing models to add relationships
-from backend.inventory.models import Store, User
-from backend.product.models import Product
-from backend.inventory.models import Expense, Payment, Return
-
-# Add relationships to existing models
-Store.settings = relationship("Setting", back_populates="store", cascade="all, delete-orphan")
-Store.pos_terminals = relationship("POSTerminal", back_populates="store", cascade="all, delete-orphan")
-
-User.role = relationship("Role", back_populates="users")
-User.audit_logs = relationship("AuditLog", back_populates="user")
-
-Product.tax_category = relationship("TaxCategory", back_populates="products")
-
-Expense.expense_category = relationship("ExpenseCategory", back_populates="expenses")
-Payment.payment_method = relationship("PaymentMethod", back_populates="payments")
-Return.refund_method = relationship("PaymentMethod", back_populates="returns") 
+# Note: Relationships to other models are defined in their respective modules
+# to avoid circular imports 

@@ -1,8 +1,10 @@
 from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, ForeignKey, DateTime
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.orm import relationship
 from datetime import datetime
+from backend.database import Base
 
-Base = declarative_base()
+# Import TaxCategory from settings to avoid duplication
+from backend.settings.models import TaxCategory
 
 class Product(Base):
     __tablename__ = 'products'
@@ -58,10 +60,4 @@ class Supplier(Base):
     supplier_id = Column(Integer, primary_key=True)
     supplier_name = Column(String(255), unique=True, nullable=False)
 
-class TaxCategory(Base):
-    __tablename__ = 'tax_categories'
-    tax_category_id = Column(Integer, primary_key=True)
-    tax_category_name = Column(String(100), unique=True, nullable=False)
-    tax_rate = Column(Numeric(5,2), nullable=False)
-    effective_date = Column(String(10), nullable=False)
-    is_active = Column(Boolean, default=True) 
+# TaxCategory is defined in backend.settings.models to avoid duplication 

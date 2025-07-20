@@ -142,6 +142,7 @@ class StockAdjustment(BaseModel):
     new_stock: int
     reason: str
     user_id: int
+    notes: Optional[str] = None
 
 # Stock Take Schema
 class StockTake(BaseModel):
@@ -165,6 +166,24 @@ class InventorySummary(BaseModel):
     low_stock_count: int
     out_of_stock_count: int
     over_stock_count: int
+
+# POS Terminal Schemas
+class POSTerminalBase(BaseModel):
+    terminal_name: str
+    ip_address: Optional[str] = None
+    is_active: bool = True
+
+class POSTerminalCreate(POSTerminalBase):
+    pass
+
+class POSTerminal(POSTerminalBase):
+    terminal_id: int
+    store_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
 
 # Inventory with Product Details (for frontend)
 class InventoryWithDetails(BaseModel):

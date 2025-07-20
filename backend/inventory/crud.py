@@ -489,10 +489,17 @@ def update_inventory_stock(inventory_id: int, new_stock: int, user_id: int, reas
         if not row:
             return False
         
-        product_id = row['product_id']
-        variant_id = row['variant_id']
-        store_id = row['store_id']
-        current_stock = row['current_stock']
+        # Handle both dict and tuple responses
+        if isinstance(row, dict):
+            product_id = row['product_id']
+            variant_id = row['variant_id']
+            store_id = row['store_id']
+            current_stock = row['current_stock']
+        else:
+            product_id = row[0]
+            variant_id = row[1]
+            store_id = row[2]
+            current_stock = row[3]
         stock_change = new_stock - current_stock
         
         # Update inventory
@@ -532,10 +539,17 @@ def perform_stock_take(inventory_id: int, actual_count: int, user_id: int, notes
         if not row:
             return False
         
-        product_id = row['product_id']
-        variant_id = row['variant_id']
-        store_id = row['store_id']
-        current_stock = row['current_stock']
+        # Handle both dict and tuple responses
+        if isinstance(row, dict):
+            product_id = row['product_id']
+            variant_id = row['variant_id']
+            store_id = row['store_id']
+            current_stock = row['current_stock']
+        else:
+            product_id = row[0]
+            variant_id = row[1]
+            store_id = row[2]
+            current_stock = row[3]
         stock_change = actual_count - current_stock
         
         # Update inventory
@@ -576,11 +590,17 @@ def transfer_stock(from_inventory_id: int, to_store_id: int, quantity: int, user
         if not row:
             return False
         
-        # Ensure row is not None before unpacking
-        product_id = row['product_id']
-        variant_id = row['variant_id']
-        from_store_id = row['store_id']
-        current_stock = row['current_stock']
+        # Handle both dict and tuple responses
+        if isinstance(row, dict):
+            product_id = row['product_id']
+            variant_id = row['variant_id']
+            from_store_id = row['store_id']
+            current_stock = row['current_stock']
+        else:
+            product_id = row[0]
+            variant_id = row[1]
+            from_store_id = row[2]
+            current_stock = row[3]
         
         if current_stock < quantity:
             return False
@@ -655,19 +675,20 @@ def create_inventory(inventory: 'schemas.InventoryCreate') -> dict:
     cur = conn.cursor()
     try:
         # Check for duplicate before insert
-        cur.execute("""
-            SELECT inventory_id FROM inventory
-            WHERE product_id = %s AND store_id = %s AND (
-                (variant_id IS NULL AND %s IS NULL) OR (variant_id = %s)
-            )
-        """, (
-            inventory.product_id,
-            inventory.store_id,
-            inventory.variant_id,
-            inventory.variant_id
-        ))
+        if inventory.variant_id is None:
+            cur.execute("""
+                SELECT inventory_id FROM inventory
+                WHERE product_id = %s AND store_id = %s AND variant_id IS NULL
+            """, (inventory.product_id, inventory.store_id))
+        else:
+            cur.execute("""
+                SELECT inventory_id FROM inventory
+                WHERE product_id = %s AND store_id = %s AND variant_id = %s
+            """, (inventory.product_id, inventory.store_id, inventory.variant_id))
+        
         if cur.fetchone():
             raise ValueError("Inventory record for this product/variant/store already exists.")
+        
         cur.execute("""
             INSERT INTO inventory (product_id, variant_id, store_id, current_stock, last_reorder_date, last_stock_take_date)
             VALUES (%s, %s, %s, %s, %s, %s)
@@ -683,7 +704,7 @@ def create_inventory(inventory: 'schemas.InventoryCreate') -> dict:
         result = cur.fetchone()
         if result is None:
             raise Exception('Failed to create inventory record')
-        inventory_id = result[0]
+        inventory_id = result['inventory_id'] if isinstance(result, dict) else result[0]
         conn.commit()
         # Fetch the full record with details
         cur.execute("""
@@ -742,59 +763,115 @@ def create_inventory(inventory: 'schemas.InventoryCreate') -> dict:
         row = cur.fetchone()
         if row is None:
             raise Exception('Failed to fetch created inventory')
-        # Map to dict for InventoryWithDetails
-        result = {
-            'inventory_id': row[0],
-            'product': {
-                'product_id': row[1],
-                'product_code': row[8],
-                'product_name': row[9],
-                'description': row[10],
-                'category_id': row[11],
-                'brand_id': row[12],
-                'supplier_id': row[13],
-                'base_price': row[14],
-                'retail_price': row[15],
-                'tax_category_id': row[16],
-                'is_active': row[17],
-                'barcode': row[18],
-                'unit_of_measure': row[19],
-                'weight': row[20],
-                'reorder_level': row[21],
-                'max_stock_level': row[22],
-                'created_at': row[23],
-                'updated_at': row[24],
-            },
-            'variant': None,
-            'store': {
-                'store_id': row[3],
-                'store_name': row[32],
-                'address': row[33],
-                'phone_number': row[34],
-                'email': row[35],
-                'city': row[36],
-                'province': row[37],
-                'postal_code': row[38],
-                'is_active': row[39],
-                'created_at': row[40],
-                'updated_at': row[41],
-            },
-            'current_stock': row[4],
-            'last_reorder_date': row[5],
-            'last_stock_take_date': row[6],
-            'updated_at': row[7],
-        }
-        if row[2]:
-            result['variant'] = {
-                'variant_id': row[2],
-                'size': row[25],
-                'color': row[26],
-                'sku_suffix': row[27],
-                'barcode': row[28],
-                'retail_price': row[29],
-                'base_price': row[30],
-                'is_active': row[31],
+        
+        # Handle both dict and tuple responses
+        if isinstance(row, dict):
+            result = {
+                'inventory_id': row['inventory_id'],
+                'product': {
+                    'product_id': row['product_id'],
+                    'product_code': row['product_code'],
+                    'product_name': row['product_name'],
+                    'description': row['description'],
+                    'category_id': row['category_id'],
+                    'brand_id': row['brand_id'],
+                    'supplier_id': row['supplier_id'],
+                    'base_price': row['base_price'],
+                    'retail_price': row['retail_price'],
+                    'tax_category_id': row['tax_category_id'],
+                    'is_active': row['product_active'],
+                    'barcode': row['barcode'],
+                    'unit_of_measure': row['unit_of_measure'],
+                    'weight': row['weight'],
+                    'reorder_level': row['reorder_level'],
+                    'max_stock_level': row['max_stock_level'],
+                    'created_at': row['product_created_at'],
+                    'updated_at': row['product_updated_at'],
+                },
+                'variant': None,
+                'store': {
+                    'store_id': row['store_id'],
+                    'store_name': row['store_name'],
+                    'address': row['address'],
+                    'phone_number': row['phone_number'],
+                    'email': row['email'],
+                    'city': row['city'],
+                    'province': row['province'],
+                    'postal_code': row['postal_code'],
+                    'is_active': row['store_active'],
+                    'created_at': row['created_at'],
+                    'updated_at': row['updated_at'],
+                },
+                'current_stock': row['current_stock'],
+                'last_reorder_date': row['last_reorder_date'],
+                'last_stock_take_date': row['last_stock_take_date'],
+                'updated_at': row['updated_at'],
             }
+            if row['variant_id']:
+                result['variant'] = {
+                    'variant_id': row['variant_id'],
+                    'size': row['size'],
+                    'color': row['color'],
+                    'sku_suffix': row['sku_suffix'],
+                    'barcode': row['variant_barcode'],
+                    'retail_price': row['variant_retail_price'],
+                    'base_price': row['variant_base_price'],
+                    'is_active': row['variant_active'],
+                }
+        else:
+            # Handle tuple response (fallback)
+            result = {
+                'inventory_id': row[0],
+                'product': {
+                    'product_id': row[1],
+                    'product_code': row[8],
+                    'product_name': row[9],
+                    'description': row[10],
+                    'category_id': row[11],
+                    'brand_id': row[12],
+                    'supplier_id': row[13],
+                    'base_price': row[14],
+                    'retail_price': row[15],
+                    'tax_category_id': row[16],
+                    'is_active': row[17],
+                    'barcode': row[18],
+                    'unit_of_measure': row[19],
+                    'weight': row[20],
+                    'reorder_level': row[21],
+                    'max_stock_level': row[22],
+                    'created_at': row[23],
+                    'updated_at': row[24],
+                },
+                'variant': None,
+                'store': {
+                    'store_id': row[3],
+                    'store_name': row[32],
+                    'address': row[33],
+                    'phone_number': row[34],
+                    'email': row[35],
+                    'city': row[36],
+                    'province': row[37],
+                    'postal_code': row[38],
+                    'is_active': row[39],
+                    'created_at': row[40],
+                    'updated_at': row[41],
+                },
+                'current_stock': row[4],
+                'last_reorder_date': row[5],
+                'last_stock_take_date': row[6],
+                'updated_at': row[7],
+            }
+            if row[2]:
+                result['variant'] = {
+                    'variant_id': row[2],
+                    'size': row[25],
+                    'color': row[26],
+                    'sku_suffix': row[27],
+                    'barcode': row[28],
+                    'retail_price': row[29],
+                    'base_price': row[30],
+                    'is_active': row[31],
+                }
         return result
     finally:
         cur.close()
@@ -811,7 +888,13 @@ def delete_inventory(inventory_id: int):
         row = cur.fetchone()
         if not row:
             raise Exception('Inventory record not found')
-        product_id, variant_id, store_id = row
+        # Handle both dict and tuple responses
+        if isinstance(row, dict):
+            product_id = row['product_id']
+            variant_id = row['variant_id']
+            store_id = row['store_id']
+        else:
+            product_id, variant_id, store_id = row
         # Delete related inventory_movements
         if variant_id is None:
             cur.execute("""
@@ -828,11 +911,140 @@ def delete_inventory(inventory_id: int):
             DELETE FROM inventory WHERE inventory_id = %s
         """, (inventory_id,))
         conn.commit()
+        return True  # Return success indicator
     finally:
         cur.close()
         return_db_connection(conn)
 
 # Inventory Movement CRUD operations
+def update_inventory_for_sale(
+    product_id: int,
+    variant_id: Optional[int],
+    store_id: int,
+    quantity: int,
+    sale_id: int,
+    user_id: int
+) -> bool:
+    """Update inventory for a sale transaction"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # Get current inventory
+        if variant_id is None:
+            cur.execute("""
+                SELECT inventory_id, current_stock
+                FROM inventory 
+                WHERE product_id = %s AND store_id = %s AND variant_id IS NULL
+            """, (product_id, store_id))
+        else:
+            cur.execute("""
+                SELECT inventory_id, current_stock
+                FROM inventory 
+                WHERE product_id = %s AND store_id = %s AND variant_id = %s
+            """, (product_id, store_id, variant_id))
+        
+        row = cur.fetchone()
+        if not row:
+            raise ValueError(f"No inventory found for product {product_id} in store {store_id}")
+        
+        # Handle both dict and tuple responses
+        if isinstance(row, dict):
+            inventory_id = row['inventory_id']
+            current_stock = row['current_stock']
+        else:
+            inventory_id = row[0]
+            current_stock = row[1]
+        
+        # Check if enough stock
+        if current_stock < quantity:
+            raise ValueError(f"Insufficient stock. Available: {current_stock}, Required: {quantity}")
+        
+        # Update inventory
+        new_stock = current_stock - quantity
+        cur.execute("""
+            UPDATE inventory 
+            SET current_stock = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE inventory_id = %s
+        """, (new_stock, inventory_id))
+        
+        # Record movement
+        cur.execute("""
+            INSERT INTO inventory_movements 
+            (product_id, variant_id, store_id, movement_type, quantity, reference_id, user_id, notes)
+            VALUES (%s, %s, %s, 'SALE', %s, %s, %s, %s)
+        """, (product_id, variant_id, store_id, -quantity, sale_id, user_id, f"Sale transaction {sale_id}"))
+        
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        cur.close()
+        return_db_connection(conn)
+
+def update_inventory_for_return(
+    product_id: int,
+    variant_id: Optional[int],
+    store_id: int,
+    quantity: int,
+    sale_id: int,
+    user_id: int
+) -> bool:
+    """Update inventory for a return transaction"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # Get current inventory
+        if variant_id is None:
+            cur.execute("""
+                SELECT inventory_id, current_stock
+                FROM inventory 
+                WHERE product_id = %s AND store_id = %s AND variant_id IS NULL
+            """, (product_id, store_id))
+        else:
+            cur.execute("""
+                SELECT inventory_id, current_stock
+                FROM inventory 
+                WHERE product_id = %s AND store_id = %s AND variant_id = %s
+            """, (product_id, store_id, variant_id))
+        
+        row = cur.fetchone()
+        if not row:
+            raise ValueError(f"No inventory found for product {product_id} in store {store_id}")
+        
+        # Handle both dict and tuple responses
+        if isinstance(row, dict):
+            inventory_id = row['inventory_id']
+            current_stock = row['current_stock']
+        else:
+            inventory_id = row[0]
+            current_stock = row[1]
+        
+        # Update inventory (add back to stock)
+        new_stock = current_stock + quantity
+        cur.execute("""
+            UPDATE inventory 
+            SET current_stock = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE inventory_id = %s
+        """, (new_stock, inventory_id))
+        
+        # Record movement
+        cur.execute("""
+            INSERT INTO inventory_movements 
+            (product_id, variant_id, store_id, movement_type, quantity, reference_id, user_id, notes)
+            VALUES (%s, %s, %s, 'RETURN', %s, %s, %s, %s)
+        """, (product_id, variant_id, store_id, quantity, sale_id, user_id, f"Return for sale {sale_id}"))
+        
+        conn.commit()
+        return True
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        cur.close()
+        return_db_connection(conn)
+
 def get_inventory_movements(
     product_id: Optional[int] = None,
     variant_id: Optional[int] = None,
@@ -959,6 +1171,74 @@ def get_inventory_movements(
 # ============================================================================
 # BULK DATA OPTIMIZATION
 # ============================================================================
+
+def get_store_terminals(store_id: int) -> List[Dict[str, Any]]:
+    """Get all terminals for a specific store"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            SELECT terminal_id, store_id, terminal_name, ip_address, is_active, created_at, updated_at
+            FROM pos_terminals
+            WHERE store_id = %s AND is_active = true
+            ORDER BY terminal_name
+        """, (store_id,))
+        rows = cur.fetchall()
+        terminals = []
+        for row in rows:
+            if isinstance(row, dict):
+                terminals.append(row)
+            else:
+                terminals.append({
+                    'terminal_id': row[0],
+                    'store_id': row[1],
+                    'terminal_name': row[2],
+                    'ip_address': row[3],
+                    'is_active': row[4],
+                    'created_at': row[5],
+                    'updated_at': row[6]
+                })
+        return terminals
+    finally:
+        cur.close()
+        return_db_connection(conn)
+
+def create_store_terminal(store_id: int, terminal: 'schemas.POSTerminalCreate') -> dict:
+    """Create a new terminal for a store"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            INSERT INTO pos_terminals (store_id, terminal_name, ip_address, is_active)
+            VALUES (%s, %s, %s, %s)
+            RETURNING terminal_id, store_id, terminal_name, ip_address, is_active, created_at, updated_at
+        """, (store_id, terminal.terminal_name, terminal.ip_address, terminal.is_active))
+        
+        row = cur.fetchone()
+        if not row:
+            raise Exception('Failed to create terminal')
+        
+        if isinstance(row, dict):
+            result = row
+        else:
+            result = {
+                'terminal_id': row[0],
+                'store_id': row[1],
+                'terminal_name': row[2],
+                'ip_address': row[3],
+                'is_active': row[4],
+                'created_at': row[5],
+                'updated_at': row[6]
+            }
+        
+        conn.commit()
+        return result
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        cur.close()
+        return_db_connection(conn)
 
 def get_all_inventory_data(
     store_id: Optional[int] = None,

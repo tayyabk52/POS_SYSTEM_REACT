@@ -431,11 +431,12 @@ function InventoryPage() {
                   onOk: async () => {
                     try {
                       await axios.delete(`${API_BASE}/inventory/${record.inventory_id}`);
-                      message.success('Inventory record deleted');
+                      message.success('Inventory record deleted successfully');
                       // Use optimized refresh
-                      fetchAllData();
+                      await fetchAllData();
                     } catch (err) {
-                      message.error('Failed to delete inventory record');
+                      console.error('Error deleting inventory:', err);
+                      message.error('Failed to delete inventory record. Please try again.');
                     }
                   },
                 });
@@ -454,22 +455,16 @@ function InventoryPage() {
     try {
       const response = await axios.post(`${API_BASE}/inventory/`, values);
       console.log('[InventoryPage] Inventory added successfully:', response.data);
-      setInventoryDrawerOpen(false);
       // Use optimized refresh
-      fetchAllData();
+      await fetchAllData();
       setAdding(false);
-      message.success('Inventory record added');
+      // Don't show success message here - let the drawer handle it
       return response.data; // Return the response for the drawer
     } catch (err) {
       console.error('[InventoryPage] Error adding inventory:', err);
       setAdding(false);
-      if (err.response && err.response.status === 409) {
-        // Re-throw 409 errors so the drawer can handle them
+      // Always re-throw errors so the drawer can handle them
         throw err;
-      } else {
-        message.error('Failed to add inventory');
-        throw err; // Re-throw so drawer can handle it
-      }
     }
   }
 
@@ -627,6 +622,7 @@ function InventoryPage() {
                 },
                 {
                   placeholder: 'Low Stock',
+                  onChange: setLowStockOnly,
                   custom: (
                     <Space>
                       <Switch checked={lowStockOnly} onChange={setLowStockOnly} size="small" />
@@ -636,6 +632,7 @@ function InventoryPage() {
                 },
                 {
                   placeholder: 'Out of Stock',
+                  onChange: setOutOfStockOnly,
                   custom: (
                     <Space>
                       <Switch checked={outOfStockOnly} onChange={setOutOfStockOnly} size="small" />
@@ -751,9 +748,14 @@ function InventoryPage() {
             message.success('Stock adjusted successfully');
             setAdjustModal({ open: false, record: null, value: 0, reason: '' });
             // Use optimized refresh
-            fetchAllData();
+            await fetchAllData();
           } catch (err) {
-            message.error('Failed to adjust stock');
+            console.error('Error adjusting stock:', err);
+            if (err.response && err.response.data && err.response.data.detail) {
+              message.error(`Failed to adjust stock: ${err.response.data.detail}`);
+            } else {
+              message.error('Failed to adjust stock. Please try again.');
+            }
           }
         }}
         okText="Adjust"
@@ -813,12 +815,17 @@ function InventoryPage() {
               notes: stockTakeModal.notes,
               user_id: 1 // TODO: Get from auth context
             });
-            message.success('Stock take completed');
+            message.success('Stock take completed successfully');
             setStockTakeModal({ open: false, record: null, value: 0, notes: '' });
             // Use optimized refresh
-            fetchAllData();
+            await fetchAllData();
           } catch (err) {
-            message.error('Failed to complete stock take');
+            console.error('Error completing stock take:', err);
+            if (err.response && err.response.data && err.response.data.detail) {
+              message.error(`Failed to complete stock take: ${err.response.data.detail}`);
+            } else {
+              message.error('Failed to complete stock take. Please try again.');
+            }
           }
         }}
         okText="Complete Stock Take"
@@ -888,12 +895,17 @@ function InventoryPage() {
               },
               { headers: { 'Content-Type': 'application/json' } }
             );
-            message.success('Stock transfer initiated');
+            message.success('Stock transfer completed successfully');
             setTransferModal({ open: false, record: null, fromStore: null, toStore: null, quantity: 0, notes: '', error: '' });
             // Use optimized refresh
-            fetchAllData();
+            await fetchAllData();
           } catch (err) {
+            console.error('Error transferring stock:', err);
+            if (err.response && err.response.data && err.response.data.detail) {
+              setTransferModal(a => ({ ...a, error: `Failed to transfer stock: ${err.response.data.detail}` }));
+            } else {
             setTransferModal(a => ({ ...a, error: 'Failed to transfer stock. Please try again.' }));
+            }
           }
         }}
         okText="Transfer"

@@ -50,7 +50,7 @@ function App() {
         <MainLayout user={user} onLogout={() => setUser(null)}>
           <Routes>
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/sales" element={<SalesPage />} />
+            <Route path="/sales" element={<SalesPage user={user} />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/customers" element={<CustomersPage />} />

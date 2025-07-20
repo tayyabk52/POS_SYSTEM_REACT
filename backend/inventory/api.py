@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
+from sqlalchemy.orm import Session
 from typing import Optional, List
 from . import crud, schemas
+from backend.database import get_db
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
@@ -23,7 +25,8 @@ def get_inventory(
             low_stock_only=low_stock_only,
             out_of_stock_only=out_of_stock_only
         )
-        return inventory_items
+        # Convert dicts to Pydantic models
+        return [schemas.InventoryWithDetails(**item) for item in inventory_items]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch inventory: {str(e)}")
 
@@ -41,11 +44,17 @@ def create_inventory(inventory: schemas.InventoryCreate):
     """Create a new inventory record"""
     try:
         new_inventory = crud.create_inventory(inventory)
-        return new_inventory
+        # Convert dict to Pydantic model
+        return schemas.InventoryWithDetails(**new_inventory)
     except ValueError as ve:
         raise HTTPException(status_code=409, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create inventory: {str(e)}")
+        # Check if it's a unique constraint violation
+        error_str = str(e)
+        if "unique_inventory_no_variant" in error_str or "duplicate key" in error_str:
+            raise HTTPException(status_code=409, detail="Inventory record for this product/variant/store already exists.")
+        else:
+            raise HTTPException(status_code=500, detail=f"Failed to create inventory: {error_str}")
 
 @router.post("/adjust-stock")
 def adjust_stock(adjustment: schemas.StockAdjustment):
@@ -125,7 +134,8 @@ def get_stores():
     """Get all active stores"""
     try:
         stores = crud.get_stores()
-        return stores
+        # Convert dicts to Pydantic models
+        return [schemas.Store(**store) for store in stores]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch stores: {str(e)}")
 
@@ -168,12 +178,32 @@ def delete_store(store_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete store: {str(e)}")
 
+# POS Terminal endpoints
+@router.get("/stores/{store_id}/terminals", response_model=List[schemas.POSTerminal])
+def get_store_terminals(store_id: int):
+    """Get all terminals for a specific store"""
+    try:
+        terminals = crud.get_store_terminals(store_id)
+        return [schemas.POSTerminal(**terminal) for terminal in terminals]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch terminals: {str(e)}")
+
+@router.post("/stores/{store_id}/terminals", response_model=schemas.POSTerminal)
+def create_store_terminal(store_id: int, terminal: schemas.POSTerminalCreate):
+    """Create a new terminal for a store"""
+    try:
+        new_terminal = crud.create_store_terminal(store_id, terminal)
+        return schemas.POSTerminal(**new_terminal)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create terminal: {str(e)}")
+
 @router.get("/users", response_model=List[schemas.User])
 def get_users():
     """Get all active users"""
     try:
         users = crud.get_users()
-        return users
+        # Convert dicts to Pydantic models
+        return [schemas.User(**user) for user in users]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch users: {str(e)}")
 

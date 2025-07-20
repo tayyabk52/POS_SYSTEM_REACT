@@ -276,6 +276,15 @@ def delete_pos_terminal(terminal_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete POS terminal: {str(e)}")
 
+# Bulk Data Endpoint
+@router.get("/bulk-data")
+def get_bulk_settings_data():
+    """Get all settings data in a single optimized request for faster loading"""
+    try:
+        return crud.get_all_settings_data()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch bulk settings data: {str(e)}")
+
 # ============================================================================
 # BULK DATA OPTIMIZATION
 # ============================================================================

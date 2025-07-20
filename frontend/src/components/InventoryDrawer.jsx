@@ -42,8 +42,10 @@ function InventoryDrawer({
   const [availableVariants, setAvailableVariants] = React.useState([]);
   const [existingInventory, setExistingInventory] = React.useState([]);
   const [allProducts, setAllProducts] = React.useState([]);
-  // Add state for UI error
+  // Add state for UI error and success
   const [uiError, setUiError] = React.useState(null);
+  const [uiSuccess, setUiSuccess] = React.useState(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Fetch all products on component mount
   React.useEffect(() => {
@@ -66,6 +68,7 @@ function InventoryDrawer({
 
   React.useEffect(() => {
     if (!open) {
+      // Reset all state when drawer closes
       form.resetFields();
       setSelectedStore(null);
       setSelectedProduct(null);
@@ -73,6 +76,8 @@ function InventoryDrawer({
       setAvailableVariants([]);
       setExistingInventory([]);
       setUiError(null);
+      setUiSuccess(null);
+      setIsSubmitting(false);
     }
   }, [open, form]);
 
@@ -104,8 +109,8 @@ function InventoryDrawer({
       return existing;
     } catch (error) {
       console.error('Error fetching existing inventory:', error);
-      message.error('Failed to load existing inventory');
-      return [];
+      // Don't show message.error here - let the caller handle it
+      throw error;
     }
   };
 
@@ -148,6 +153,7 @@ function InventoryDrawer({
       .filter(Boolean);
     
     console.log('[InventoryDrawer] Final filtered products:', filtered.length);
+    console.log('[InventoryDrawer] Final filtered product names:', filtered.map(p => p.product_name));
     return filtered;
   };
 
@@ -156,15 +162,27 @@ function InventoryDrawer({
     setSelectedStore(storeId);
     setSelectedProduct(null);
     setUiError(null);
+    setUiSuccess(null);
+    setIsSubmitting(false);
     form.setFieldsValue({ product_id: undefined, variant_id: undefined });
+    
     if (storeId) {
+      try {
       const existing = await fetchExistingInventory(storeId);
+        console.log('[InventoryDrawer] All products before filtering:', allProducts.map(p => ({ id: p.product_id, name: p.product_name })));
       const filteredProducts = getAvailableProducts(allProducts, existing);
       setAvailableProducts(filteredProducts);
+        
       if (filteredProducts.length === 0) {
         setUiError('All products/variants are already in inventory for this store.');
       }
+        
       console.log('[InventoryDrawer] Filtered products for store', storeId, filteredProducts);
+      } catch (error) {
+        console.error('[InventoryDrawer] Error fetching existing inventory:', error);
+        setUiError('Failed to load existing inventory for this store.');
+        setAvailableProducts([]);
+      }
     } else {
       setAvailableProducts([]);
     }
@@ -174,7 +192,9 @@ function InventoryDrawer({
   const handleProductChange = (productId) => {
     const product = availableProducts.find(p => p.product_id === productId);
     setSelectedProduct(product);
+    setUiError(null); // Clear any previous errors
     form.setFieldsValue({ variant_id: undefined });
+    
     if (product && product.variants && product.variants.length > 0) {
       setAvailableVariants(product.variants);
       console.log('[InventoryDrawer] Available variants for product', productId, product.variants);
@@ -200,15 +220,59 @@ function InventoryDrawer({
     
     console.log('[InventoryDrawer] Form values after cleaning:', cleanedValues);
     setUiError(null);
+    setUiSuccess(null);
+    setIsSubmitting(true);
+    
     try {
-      await onSave(cleanedValues);
+      const result = await onSave(cleanedValues);
+      console.log('[InventoryDrawer] Success - received result:', result);
+      
+      // Show success message and close drawer
+      setUiSuccess('✅ Inventory added successfully!');
+      message.success('Inventory record added successfully');
+      
+      // Close drawer after a brief delay
+      setTimeout(() => {
+        onClose();
+        // Reset form after closing
+        form.resetFields();
+        setSelectedStore(null);
+        setSelectedProduct(null);
+        setAvailableProducts([]);
+        setAvailableVariants([]);
+        setExistingInventory([]);
+        setUiError(null);
+        setUiSuccess(null);
+      }, 1500);
+      
     } catch (err) {
       console.error('[InventoryDrawer] Error submitting form:', err);
-      if (err && err.response && err.response.status === 409) {
-        setUiError(err.response.data.detail || 'Inventory record for this product/variant/store already exists.');
+      
+      // Handle different error types
+      if (err && err.response) {
+        const status = err.response.status;
+        const detail = err.response.data?.detail || '';
+        
+        switch (status) {
+          case 409:
+            setUiError(`⚠️ ${detail || 'Inventory record for this product/variant/store already exists.'}`);
+            break;
+          case 422:
+            setUiError(`❌ ${detail || 'Invalid data provided. Please check your input.'}`);
+            break;
+          case 500:
+            setUiError('❌ Server error occurred. Please try again.');
+            break;
+          default:
+            setUiError(`❌ ${detail || `Error ${status}: Failed to add inventory.`}`);
+        }
+      } else if (err && err.message) {
+        setUiError(`❌ Network error: ${err.message}`);
       } else {
-        setUiError('Failed to add inventory. Please try again.');
+        setUiError('❌ Failed to add inventory. Please try again.');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -231,8 +295,14 @@ function InventoryDrawer({
       footer={
         <div style={{ textAlign: 'right', padding: 16, background: 'transparent' }}>
           <Button onClick={onClose} style={{ marginRight: 12 }}>Cancel</Button>
-          <Button type="primary" onClick={handleOk} loading={saving} style={{ fontWeight: theme.fontWeightBold, fontSize: 16 }}>
-            Add Inventory
+          <Button 
+            type="primary" 
+            onClick={handleOk} 
+            loading={saving || isSubmitting} 
+            disabled={!selectedStore || availableProducts.length === 0 || isSubmitting}
+            style={{ fontWeight: theme.fontWeightBold, fontSize: 16 }}
+          >
+            {isSubmitting ? 'Adding...' : 'Add Inventory'}
           </Button>
         </div>
       }
@@ -245,6 +315,9 @@ function InventoryDrawer({
       >
         {uiError && (
           <div style={{ color: 'red', marginBottom: 16, fontWeight: 500, fontSize: 15 }}>{uiError}</div>
+        )}
+        {uiSuccess && (
+          <div style={{ color: 'green', marginBottom: 16, fontWeight: 500, fontSize: 15 }}>{uiSuccess}</div>
         )}
         <Divider orientation="left" style={{ fontWeight: theme.fontWeightBold, color: theme.text, fontSize: 18 }}>Store Selection</Divider>
         

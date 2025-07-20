@@ -1,8 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, Numeric, Boolean, ForeignKey, DateTime, Date
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.orm import relationship
 from datetime import datetime
-
-Base = declarative_base()
+from backend.database import Base
 
 class Store(Base):
     __tablename__ = 'stores'
@@ -85,39 +84,9 @@ class Expense(Base):
     store = relationship('Store', backref='expenses')
     user = relationship('User', backref='expenses')
 
-class Payment(Base):
-    __tablename__ = 'payments'
-    payment_id = Column(Integer, primary_key=True, index=True)
-    store_id = Column(Integer, ForeignKey('stores.store_id'), nullable=False)
-    payment_method_id = Column(Integer, ForeignKey('payment_methods.payment_method_id'), nullable=False)
-    amount = Column(Numeric(10, 2), nullable=False)
-    reference_type = Column(String(20), nullable=False)  # SALE, PURCHASE, etc.
-    reference_id = Column(Integer, nullable=False)  # ID of the sale, purchase, etc.
-    payment_date = Column(DateTime, nullable=False, default=datetime.utcnow)
-    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+# Payment model is defined in sales/models.py to avoid conflicts
 
-    # Relationships
-    store = relationship('Store', backref='payments')
-    user = relationship('User', backref='payments')
-
-class Return(Base):
-    __tablename__ = 'returns'
-    return_id = Column(Integer, primary_key=True, index=True)
-    store_id = Column(Integer, ForeignKey('stores.store_id'), nullable=False)
-    sale_id = Column(Integer, ForeignKey('sales.sale_id'), nullable=False)
-    refund_method_id = Column(Integer, ForeignKey('payment_methods.payment_method_id'), nullable=False)
-    amount = Column(Numeric(10, 2), nullable=False)
-    reason = Column(Text)
-    return_date = Column(DateTime, nullable=False, default=datetime.utcnow)
-    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # Relationships
-    store = relationship('Store', backref='returns')
-    user = relationship('User', backref='returns')
+# Return model is defined in returns/models.py to avoid conflicts
 
 # Import existing models for relationships
 try:
